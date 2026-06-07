@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/*
+ * Tokens del JSON YOY (/Users/gaston.bordet/Desktop/Themes Providers/YOY.json).
+ * Respetamos los valores exactos del archivo, incluso los que parecen bugs
+ * (ej. `black` === `white` === `#FFFFFF`). Si querés que esto cambie, editá
+ * primero el JSON y/o specs/constitution.md.
+ *
+ * Convención de nombres: snake_case del JSON → kebab-case en CSS / utility
+ * Tailwind. Ej. `background_home_section` → `--color-background-home-section`
+ * y se usa como `bg-background-home-section`.
+ */
+@theme {
+  /* === Base === */
+  --color-black: #ffffff;
+  --color-white: #ffffff;
+
+  /* === Grays === */
+  --color-gray-80: #f7f3fe;
+  --color-gray-60: #e4ddf0;
+  --color-gray-40: #cac2d6;
+  --color-gray-20: #827a94;
+  --color-gray-08: #665e76;
+  --color-gray-03: #36065b;
+
+  /* === Brand / default (fucsia) === */
+  --color-default: #ff155d;
+  --color-default-dark: #be0e50;
+  --color-default-light: #58053d;
+  --color-default-80: #be0e50;
+  --color-default-60: #950b48;
+  --color-default-40: #6c0741;
+  --color-default-20: #430439;
+  --color-default-10: #2f0235;
+  --color-default-05: #240133;
+
+  /* Aliases legibles */
+  --color-dark: #be0e50;
+  --color-light: #58053d;
+
+  /* === Accent (cyan) === */
+  --color-accent: #00d8fc;
+  --color-system-links: #00d3f6;
+
+  /* === System === */
+  --color-system-success-dark: #02fca4;
+  --color-system-success-light: #2f5246;
+  --color-system-warning-dark: #ffc200;
+  --color-system-warning-light: #5e3129;
+  --color-system-error-dark: #f4155a;
+  --color-system-error-light: #51043a;
+
+  /* === Yellow === */
+  --color-yellow-default: #ff7dc6;
+  --color-yellow-dark: #e7a600;
+  --color-yellow-light: #fff8e5;
+  --color-opacity-yellow-20: #ffc73833;
+
+  /* === Greens === */
+  --color-green-default: #008859;
+  --color-green-light: #3cab6d;
+  --color-green-dark: #00471b;
+  --color-green-80: #58ca8a;
+  --color-green-60: #7de3aa;
+  --color-green-40: #a0e7bf;
+  --color-green-20: #c8f0da;
+  --color-green-10: #dcf5e7;
+
+  /* === Blues === */
+  --color-blue-default: #0049c4;
+  --color-blue-light: #2375ff;
+  --color-blue-dark: #0d3f92;
+  --color-blue-80: #336dd0;
+  --color-blue-60: #6692dc;
+  --color-blue-40: #99b6e7;
+  --color-blue-20: #ccdbf3;
+  --color-blue-10: #e5edf9;
+
+  /* === Oranges === */
+  --color-orange-light: #ffa985;
+  --color-orange-dark: #ff5524;
+
+  /* === Cross theme tokens === */
+  --color-blue-cross-light: #96abcb;
+  --color-blue-cross-dark: #092042;
+  --color-black-cross: #121213;
+
+  /* === Backgrounds === */
+  --color-background-light: #17002f;
+  --color-background-dark: #17002f;
+  --color-background-home: #17002f;
+  --color-background-home-section: #36224b;
+  --color-background-promo-section: #f4155a;
+  --color-background-success-page: #17002f;
+  --color-background-check-section: #008859;
+  --color-background-check-section-opacity: #3cab6d;
+  --color-background-container: #453359;
+
+  /* === Texts === */
+  --color-text-light: #f9f4f9;
+  --color-text-gray: #ad9bcb;
+  --color-text-dark: #ffffff;
+  --color-text-button: #ffffff;
+  --color-text-home: #ffffff;
+  --color-text-home-section: #ffffff;
+  --color-text-success: #ffffff;
+  --color-text-accent-success: #be0e50;
+  --color-text-gray-success: #ad9bcb;
+
+  /* === Strokes y otros === */
+  --color-stroke-success: #ffffff66;
+  --color-button-success: #ff155d;
+  --color-button-dark-success: #be0e50;
+  --color-check-success: #02fca4;
+
+  /* === Opacity helpers (valores literales del JSON, ver bug en specs) === */
+  --color-opacity-white-80: #ffffffcc;
+  --color-opacity-white-70: #ffffffb2;
+  --color-opacity-white-40: #ffffff66;
+  --color-opacity-white-30: #ffffff4c;
+  --color-opacity-white-12: #ffffff1f;
+  --color-opacity-white-02: #ffffff05;
+  --color-opacity-white-00: #ffffff00;
+  --color-opacity-black-80: #ffffffcc;
+  --color-opacity-black-55: #ffffff8c;
+  --color-opacity-black-35: #ffffff59;
+  --color-opacity-black-20: #ffffff33;
+  --color-opacity-black-05: #ffffff0d;
+  --color-opacity-black-02: #ffffff05;
+  --color-opacity-gray-02: #f4f4f4f0;
+  --color-opacity-gray-05: #f4f4f4f0;
+  --color-opacity-gray-94: #f4f4f4f0;
+
+  /* === Radius === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-button: 40px;
+
+  /* === Fonts === */
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-bold: var(--font-hanken), system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-background-home);
+  color: var(--color-text-home);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
