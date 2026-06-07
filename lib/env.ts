@@ -1,12 +1,22 @@
 import { z } from "zod";
 
+/**
+ * Trata strings vacíos como `undefined` para que un placeholder en
+ * `.env.local` (ej. `FOOTBALL_DATA_TOKEN=`) no rompa la validación de
+ * un campo opcional.
+ */
+const optionalSecret = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().min(1).optional(),
+);
+
 const envSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  DATABASE_URL: z.string().url().optional(),
-  FOOTBALL_DATA_TOKEN: z.string().min(1).optional(),
-  CRON_SECRET: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: optionalSecret,
+  DATABASE_URL: optionalSecret,
+  FOOTBALL_DATA_TOKEN: optionalSecret,
+  CRON_SECRET: optionalSecret,
 });
 
 export const env = envSchema.parse({
