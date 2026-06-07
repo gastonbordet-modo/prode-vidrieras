@@ -1,6 +1,6 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { matches } from "@/db/schema";
+import { matches, predictions } from "@/db/schema";
 import { getActiveRound } from "@/lib/active-round";
 import { requireUser } from "@/lib/auth";
 import { MatchCard } from "@/components/match-card";
@@ -18,7 +18,27 @@ export default async function HomePage() {
           orderBy: [asc(matches.kickoffAt)],
         });
 
+  const userPredictions =
+    roundMatches.length === 0
+      ? []
+      : await db.query.predictions.findMany({
+          where: and(
+            eq(predictions.userId, user.id),
+            inArray(
+              predictions.matchId,
+              roundMatches.map((m) => m.id),
+            ),
+          ),
+        });
+  const predictionsByMatchId = new Map(
+    userPredictions.map((p) => [p.matchId, p]),
+  );
+
   const roundName = roundMatches[0]?.roundName;
+  // Server Component: se ejecuta una vez por request, Date.now() acá es
+  // determinístico desde el punto de vista del HTML servido.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-6">
@@ -55,7 +75,12 @@ export default async function HomePage() {
 
           <section className="flex flex-col gap-3">
             {roundMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
+              <MatchCard
+                key={match.id}
+                match={match}
+                prediction={predictionsByMatchId.get(match.id) ?? null}
+                now={now}
+              />
             ))}
           </section>
         </>

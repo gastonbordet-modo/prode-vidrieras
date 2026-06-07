@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
-import type { matches } from "@/db/schema";
+import type { matches, predictions } from "@/db/schema";
 import { getGroupColor } from "@/lib/group-colors";
+import { PredictionForm } from "./prediction-form";
 
 type Match = typeof matches.$inferSelect;
+type Prediction = typeof predictions.$inferSelect;
 
 const STATUS_LABEL: Record<Match["status"], string> = {
   scheduled: "Programado",
@@ -39,10 +41,8 @@ function formatGroup(group: string | null): string | null {
 function tintedStyle(color: string | null): CSSProperties | undefined {
   if (!color) return undefined;
   return {
-    // Mezcla 12% del color del grupo con el background-container.
     backgroundColor: `color-mix(in oklab, ${color} 12%, #453359)`,
     borderColor: `color-mix(in oklab, ${color} 55%, transparent)`,
-    // Backlight tenue: glow expandido hacia afuera, blur grande.
     boxShadow: `0 0 28px -6px color-mix(in oklab, ${color} 45%, transparent)`,
   };
 }
@@ -87,11 +87,43 @@ function TeamRow({
   );
 }
 
-export function MatchCard({ match }: { match: Match }) {
+function PredictionReadOnly({ prediction }: { prediction: Prediction | null }) {
+  if (!prediction) {
+    return (
+      <p className="text-text-gray border-opacity-white-12 -mx-4 border-t px-4 pt-3 text-sm">
+        No cargaste pronóstico para este partido.
+      </p>
+    );
+  }
+  return (
+    <p className="text-text-gray border-opacity-white-12 -mx-4 border-t px-4 pt-3 text-sm">
+      Tu pronóstico:{" "}
+      <strong className="text-text-dark font-semibold tabular-nums">
+        {prediction.homeScore} - {prediction.awayScore}
+      </strong>
+    </p>
+  );
+}
+
+export function MatchCard({
+  match,
+  prediction,
+  now,
+}: {
+  match: Match;
+  prediction: Prediction | null;
+  /** Timestamp del request, levantado al parent para mantener pura la card. */
+  now: number;
+}) {
   const hasScore = match.homeScore !== null && match.awayScore !== null;
   const groupLabel = formatGroup(match.groupName);
   const groupColor = getGroupColor(match.groupName);
   const style = tintedStyle(groupColor);
+
+  const isEditable =
+    !match.isKnockout &&
+    match.status === "scheduled" &&
+    match.kickoffAt.getTime() > now;
 
   return (
     <article
@@ -127,6 +159,16 @@ export function MatchCard({ match }: { match: Match }) {
           align="left"
         />
       </div>
+
+      {isEditable ? (
+        <PredictionForm
+          matchId={match.id}
+          existingHome={prediction?.homeScore ?? null}
+          existingAway={prediction?.awayScore ?? null}
+        />
+      ) : (
+        !match.isKnockout && <PredictionReadOnly prediction={prediction} />
+      )}
 
       {groupLabel && (
         <footer
