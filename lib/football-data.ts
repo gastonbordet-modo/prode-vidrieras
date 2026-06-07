@@ -27,6 +27,7 @@ const durationSchema = z.enum(["REGULAR", "EXTRA_TIME", "PENALTY_SHOOTOUT"]);
 
 const teamSchema = z.object({
   name: z.string().nullable(),
+  crest: z.string().nullable(),
 });
 
 const halfScoreSchema = z.object({
@@ -48,6 +49,7 @@ export const apiMatchSchema = z.object({
   status: statusSchema,
   stage: stageSchema,
   matchday: z.number().int().nullable(),
+  group: z.string().nullable(),
   homeTeam: teamSchema,
   awayTeam: teamSchema,
   score: scoreSchema,

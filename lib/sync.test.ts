@@ -6,8 +6,15 @@ const baseMatch = {
   id: 1,
   utcDate: "2026-06-11T19:00:00Z",
   status: "TIMED",
-  homeTeam: { name: "Argentina" },
-  awayTeam: { name: "Francia" },
+  group: "GROUP_A",
+  homeTeam: {
+    name: "Argentina",
+    crest: "https://crests.football-data.org/769.svg",
+  },
+  awayTeam: {
+    name: "Francia",
+    crest: "https://crests.football-data.org/773.svg",
+  },
   score: { duration: "REGULAR", fullTime: { home: null, away: null } },
 } satisfies Omit<ApiMatch, "stage" | "matchday">;
 
@@ -125,16 +132,31 @@ describe("mapMatch", () => {
     expect(m.penaltyWinner).toBe("Argentina");
   });
 
-  it("equipo TBD (name null) → string 'TBD'", () => {
+  it("equipo TBD (name null) → string 'TBD' y crest null", () => {
     const m = mapMatch({
       ...baseMatch,
       stage: "LAST_32",
       matchday: null,
-      homeTeam: { name: null },
-      awayTeam: { name: null },
+      group: null,
+      homeTeam: { name: null, crest: null },
+      awayTeam: { name: null, crest: null },
     });
     expect(m.homeTeam).toBe("TBD");
     expect(m.awayTeam).toBe("TBD");
+    expect(m.homeTeamCrest).toBeNull();
+    expect(m.awayTeamCrest).toBeNull();
+    expect(m.groupName).toBeNull();
+  });
+
+  it("conserva crest y grupo de la API", () => {
+    const m = mapMatch({
+      ...baseMatch,
+      stage: "GROUP_STAGE",
+      matchday: 1,
+    });
+    expect(m.homeTeamCrest).toBe("https://crests.football-data.org/769.svg");
+    expect(m.awayTeamCrest).toBe("https://crests.football-data.org/773.svg");
+    expect(m.groupName).toBe("GROUP_A");
   });
 
   it("ganador por penales se resuelve aunque uno de los equipos sea TBD", () => {
@@ -143,8 +165,11 @@ describe("mapMatch", () => {
       stage: "QUARTER_FINALS",
       matchday: null,
       status: "FINISHED",
-      homeTeam: { name: null },
-      awayTeam: { name: "Francia" },
+      homeTeam: { name: null, crest: null },
+      awayTeam: {
+        name: "Francia",
+        crest: "https://crests.football-data.org/773.svg",
+      },
       score: {
         duration: "PENALTY_SHOOTOUT",
         fullTime: { home: 1, away: 1 },

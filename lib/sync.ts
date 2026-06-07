@@ -63,6 +63,9 @@ export type MappedMatch = {
   isKnockout: boolean;
   homeTeam: string;
   awayTeam: string;
+  homeTeamCrest: string | null;
+  awayTeamCrest: string | null;
+  groupName: string | null;
   kickoffAt: Date;
   homeScore: number | null;
   awayScore: number | null;
@@ -106,6 +109,9 @@ export function mapMatch(raw: ApiMatch): MappedMatch {
     isKnockout: round.isKnockout,
     homeTeam: raw.homeTeam.name ?? "TBD",
     awayTeam: raw.awayTeam.name ?? "TBD",
+    homeTeamCrest: raw.homeTeam.crest,
+    awayTeamCrest: raw.awayTeam.crest,
+    groupName: raw.group,
     kickoffAt: new Date(raw.utcDate),
     homeScore,
     awayScore,
@@ -168,6 +174,9 @@ export async function syncFromApi(): Promise<SyncResult> {
           isKnockout: sql`excluded.is_knockout`,
           homeTeam: sql`excluded.home_team`,
           awayTeam: sql`excluded.away_team`,
+          homeTeamCrest: sql`excluded.home_team_crest`,
+          awayTeamCrest: sql`excluded.away_team_crest`,
+          groupName: sql`excluded.group_name`,
           kickoffAt: sql`excluded.kickoff_at`,
           homeScore: sql`excluded.home_score`,
           awayScore: sql`excluded.away_score`,
