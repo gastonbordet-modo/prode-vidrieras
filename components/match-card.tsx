@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import type { matches } from "@/db/schema";
+import { getGroupColor } from "@/lib/group-colors";
 
 type Match = typeof matches.$inferSelect;
 
@@ -31,9 +33,18 @@ function formatKickoff(date: Date): string {
 
 function formatGroup(group: string | null): string | null {
   if (!group) return null;
-  // "GROUP_A" → "Grupo A"
-  const letter = group.replace("GROUP_", "");
-  return `Grupo ${letter}`;
+  return `Grupo ${group.replace("GROUP_", "")}`;
+}
+
+function tintedStyle(color: string | null): CSSProperties | undefined {
+  if (!color) return undefined;
+  return {
+    // Mezcla 12% del color del grupo con el background-container.
+    backgroundColor: `color-mix(in oklab, ${color} 12%, #453359)`,
+    borderColor: `color-mix(in oklab, ${color} 55%, transparent)`,
+    // Backlight tenue: glow expandido hacia afuera, blur grande.
+    boxShadow: `0 0 28px -6px color-mix(in oklab, ${color} 45%, transparent)`,
+  };
 }
 
 function TeamRow({
@@ -79,9 +90,14 @@ function TeamRow({
 export function MatchCard({ match }: { match: Match }) {
   const hasScore = match.homeScore !== null && match.awayScore !== null;
   const groupLabel = formatGroup(match.groupName);
+  const groupColor = getGroupColor(match.groupName);
+  const style = tintedStyle(groupColor);
 
   return (
-    <article className="bg-background-container border-opacity-white-12 flex flex-col gap-3 rounded-md border px-4 py-3">
+    <article
+      style={style}
+      className="bg-background-container border-opacity-white-12 flex flex-col gap-3 rounded-md border px-4 py-3 transition-shadow"
+    >
       <header className="text-text-gray flex items-center justify-between text-xs">
         <span>{formatKickoff(match.kickoffAt)}</span>
         <span className={STATUS_CLASS[match.status]}>
@@ -113,7 +129,10 @@ export function MatchCard({ match }: { match: Match }) {
       </div>
 
       {groupLabel && (
-        <footer className="text-text-gray border-opacity-white-12 -mx-4 -mb-3 border-t px-4 pt-2 pb-2 text-xs tracking-wider uppercase">
+        <footer
+          style={groupColor ? { color: groupColor } : undefined}
+          className="border-opacity-white-12 -mx-4 -mb-3 border-t px-4 pt-2 pb-2 text-xs font-semibold tracking-wider uppercase"
+        >
           {groupLabel}
         </footer>
       )}
