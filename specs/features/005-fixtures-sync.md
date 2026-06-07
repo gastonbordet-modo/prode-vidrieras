@@ -81,21 +81,32 @@ function mapMatch(raw: ApiMatch): MatchUpsert {
 
 ### Derivación de `round_number`
 
+El Mundial 2026 tiene formato expandido (48 equipos), agrega ronda
+`LAST_32` antes de octavos. Total: **9 fechas**.
+
 ```
 GROUP_STAGE matchday=1 → 1
 GROUP_STAGE matchday=2 → 2
 GROUP_STAGE matchday=3 → 3
-LAST_16                → 4
-QUARTER_FINALS         → 5
-SEMI_FINALS            → 6
-THIRD_PLACE            → 7
-FINAL                  → 8
+LAST_32                → 4   (16avos de final)
+LAST_16                → 5   (Octavos)
+QUARTER_FINALS         → 6
+SEMI_FINALS            → 7
+THIRD_PLACE            → 8
+FINAL                  → 9
 ```
+
+### Equipos "TBD" en eliminatoria
+
+Los partidos de fase eliminatoria vienen con `homeTeam.name = null`
+y `awayTeam.name = null` mientras no estén definidos los clasificados.
+Guardamos `"TBD"` como placeholder; el sync diario los reemplaza con
+el nombre real cuando football-data los actualice.
 
 ### Mapeo de status
 
 ```
-SCHEDULED, TIMED         → 'scheduled'
+SCHEDULED, TIMED         → 'scheduled'   (TIMED es el default real)
 IN_PLAY, PAUSED          → 'live'
 FINISHED                 → 'finished'
 POSTPONED, SUSPENDED,
