@@ -6,6 +6,21 @@ Aplicación web pública para un grupo acotado (~10 personas) donde cada
 participante pronostica los partidos del Mundial y compite en un ranking
 único.
 
+- **Production**: https://prode-vidrieras-reservas-m.vercel.app
+- **DB**: Supabase Postgres (Vercel Marketplace integration)
+- **Cron**: 1×/día `0 5 * * *` UTC
+
+## Empezando en una conversación nueva
+
+Si abrís una nueva sesión con Claude, leé en este orden:
+
+1. [`specs/tasks.md`](./specs/tasks.md) — estado actual, qué está
+   deployado, qué falta, próximos pasos recomendados.
+2. [`specs/constitution.md`](./specs/constitution.md) — stack y
+   principios no-negociables.
+3. [`specs/prd.md`](./specs/prd.md) — qué construimos y por qué.
+4. Spec de la feature que vas a tocar (`specs/features/00N-*.md`).
+
 ## Documentación
 
 Este repo sigue **Spec-Driven Development**. Antes de tocar código se
