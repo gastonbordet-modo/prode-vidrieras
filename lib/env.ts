@@ -23,7 +23,10 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  DATABASE_URL: process.env.DATABASE_URL,
+  // Local usa DATABASE_URL (manualmente seteado). En Vercel el Supabase
+  // Marketplace inyecta POSTGRES_URL (pooler en port 6543) — perfecto
+  // para serverless con `prepare: false`.
+  DATABASE_URL: process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
   FOOTBALL_DATA_TOKEN: process.env.FOOTBALL_DATA_TOKEN,
   CRON_SECRET: process.env.CRON_SECRET,
 });
