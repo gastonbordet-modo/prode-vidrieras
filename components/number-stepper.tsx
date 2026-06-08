@@ -1,42 +1,39 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
-import { useState } from "react";
 
 /**
  * Input numérico controlado con botones +/- en lugar de los spinners
- * nativos del browser. Submitea su `value` via `name` cuando el form
- * que lo contiene se envía.
+ * nativos del browser. El parent maneja el state y reacciona al onChange
+ * (típicamente con debounce para auto-save).
  */
 export function NumberStepper({
-  name,
-  defaultValue,
+  value,
+  onChange,
   min = 0,
   max = 20,
   ariaLabel,
 }: {
-  name: string;
-  defaultValue: number | null;
+  value: number | null;
+  onChange: (next: number | null) => void;
   min?: number;
   max?: number;
   ariaLabel: string;
 }) {
-  const [value, setValue] = useState<string>(
-    defaultValue !== null ? String(defaultValue) : "",
-  );
-
-  const numeric = value === "" ? null : Number(value);
-  const canDec = numeric !== null && numeric > min;
-  const canInc = numeric === null || numeric < max;
+  const canDec = value !== null && value > min;
+  const canInc = value === null || value < max;
 
   const clamp = (n: number) => Math.max(min, Math.min(max, n));
 
   const handleDec = () => {
-    if (numeric === null) return;
-    setValue(String(clamp(numeric - 1)));
+    if (value === null) return;
+    onChange(clamp(value - 1));
   };
   const handleInc = () => {
-    setValue(String(clamp(numeric === null ? min : numeric + 1)));
+    // Primer + sobre un score vacío arranca en 1 (no en min). Así un click
+    // sobre el + ya implica "marcó un gol", mientras que el rival queda
+    // en 0 por el auto-fill del parent.
+    onChange(value === null ? clamp(1) : clamp(value + 1));
   };
 
   return (
@@ -52,20 +49,15 @@ export function NumberStepper({
       </button>
 
       <input
-        name={name}
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
-        required
         aria-label={ariaLabel}
-        value={value}
+        value={value === null ? "" : String(value)}
         onChange={(e) => {
           const cleaned = e.target.value.replace(/\D/g, "");
-          if (cleaned === "") {
-            setValue("");
-          } else {
-            setValue(String(clamp(Number(cleaned))));
-          }
+          if (cleaned === "") onChange(null);
+          else onChange(clamp(Number(cleaned)));
         }}
         className="bg-opacity-white-12 focus:bg-opacity-white-30 text-text-dark h-8 w-10 [appearance:textfield] rounded-md text-center text-base font-semibold tabular-nums transition-colors outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />

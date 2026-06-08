@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, Pencil, Save } from "lucide-react";
-import { useActionState } from "react";
-import { submitPrediction, type SubmitPredictionState } from "@/app/actions";
+import { Check, Loader2 } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { submitPrediction } from "@/app/actions";
 import { NumberStepper } from "./number-stepper";
 
-const initialState: SubmitPredictionState = null;
-
 type TeamInfo = { name: string; crest: string | null };
+
+const DEBOUNCE_MS = 1000;
 
 export function PredictionForm({
   matchId,
@@ -20,23 +20,81 @@ export function PredictionForm({
   away: TeamInfo;
   existing: { home: number | null; away: number | null };
 }) {
-  const [state, formAction, pending] = useActionState(
-    submitPrediction,
-    initialState,
+  const [homeScore, setHomeScore] = useState<number | null>(existing.home);
+  const [awayScore, setAwayScore] = useState<number | null>(existing.away);
+  const [lastSaved, setLastSaved] = useState<{
+    home: number;
+    away: number;
+  } | null>(
+    existing.home !== null && existing.away !== null
+      ? { home: existing.home, away: existing.away }
+      : null,
   );
-  const hasExisting = existing.home !== null && existing.away !== null;
-  const ActionIcon = hasExisting ? Pencil : Save;
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  // Auto-save: cuando ambos scores están seteados y son distintos al último
+  // guardado, dispara la acción de servidor después de DEBOUNCE_MS de
+  // inactividad. El cleanup cancela timers pendientes si el user sigue
+  // tocando.
+  useEffect(() => {
+    if (homeScore === null || awayScore === null) return;
+    if (
+      lastSaved &&
+      homeScore === lastSaved.home &&
+      awayScore === lastSaved.away
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      fd.set("homeScore", String(homeScore));
+      fd.set("awayScore", String(awayScore));
+
+      startTransition(async () => {
+        const result = await submitPrediction(null, fd);
+        if (result?.error) {
+          setError(result.error);
+        } else if (result?.ok) {
+          setError(null);
+          setLastSaved({ home: homeScore, away: awayScore });
+        }
+      });
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [homeScore, awayScore, matchId, lastSaved]);
+
+  const isSaved =
+    lastSaved !== null &&
+    homeScore === lastSaved.home &&
+    awayScore === lastSaved.away;
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
-      <input type="hidden" name="matchId" value={matchId} />
+    <>
+      {pending && (
+        <div className="bg-background-home/60 absolute inset-0 z-10 grid place-items-center rounded-md backdrop-blur-sm">
+          <Loader2
+            className="text-default h-6 w-6 animate-spin"
+            strokeWidth={2.5}
+          />
+        </div>
+      )}
 
       <TeamLine
         team={home}
         stepper={
           <NumberStepper
-            name="homeScore"
-            defaultValue={existing.home}
+            value={homeScore}
+            onChange={(next) => {
+              setHomeScore(next);
+              // Si es el primer score que se carga, llenamos el otro con 0
+              // para que el debounce pueda dispararse sin obligar al user
+              // a tocar los dos lados.
+              if (next !== null && awayScore === null) setAwayScore(0);
+            }}
             ariaLabel={`Goles de ${home.name}`}
           />
         }
@@ -45,41 +103,31 @@ export function PredictionForm({
         team={away}
         stepper={
           <NumberStepper
-            name="awayScore"
-            defaultValue={existing.away}
+            value={awayScore}
+            onChange={(next) => {
+              setAwayScore(next);
+              if (next !== null && homeScore === null) setHomeScore(0);
+            }}
             ariaLabel={`Goles de ${away.name}`}
           />
         }
       />
 
-      <div className="flex items-center justify-between gap-3">
-        {state?.error ? (
+      <div className="flex min-h-[1.25rem] items-center justify-end">
+        {error ? (
           <p role="alert" className="text-system-error-dark text-xs">
-            {state.error}
+            {error}
           </p>
-        ) : state?.ok ? (
+        ) : isSaved ? (
           <p
             role="status"
             className="text-system-success-dark inline-flex items-center gap-1 text-xs font-semibold"
           >
             <Check className="h-3.5 w-3.5" strokeWidth={3} /> Guardado
           </p>
-        ) : (
-          <span />
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          aria-label={
-            hasExisting ? "Actualizar pronóstico" : "Guardar pronóstico"
-          }
-          className="bg-default text-text-button grid h-9 w-9 shrink-0 place-items-center rounded-md transition-opacity disabled:opacity-60"
-        >
-          <ActionIcon className="h-4 w-4" strokeWidth={2.5} />
-        </button>
+        ) : null}
       </div>
-    </form>
+    </>
   );
 }
 

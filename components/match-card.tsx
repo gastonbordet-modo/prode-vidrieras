@@ -109,7 +109,7 @@ export function MatchCard({
   return (
     <article
       style={style}
-      className="bg-background-container border-opacity-white-12 flex flex-col gap-3 rounded-md border px-4 py-3"
+      className="bg-background-container border-opacity-white-12 relative flex flex-col gap-3 rounded-md border px-4 py-3"
     >
       {groupLabel && (
         <p
