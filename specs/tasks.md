@@ -26,8 +26,9 @@ Plan de ejecución del MVP + progreso real.
 
 ### Próximo paso recomendado
 
-**Fase 8 — Pulido pre-lanzamiento** (404 page, OG, etc.). El MVP está
-feature-complete.
+MVP completo. Próximos pasos sugeridos (deuda técnica post-MVP):
+**Ver pronósticos del resto después del kickoff**, **notificaciones
+por mail antes de cada fecha**, o **custom domain en Vercel**.
 
 ---
 
@@ -143,12 +144,17 @@ feature-complete.
 - [x] Edge cases: admin no puede borrarse ni ajustarse a sí mismo
       (disabled + guard server-side)
 
-## Fase 8 — Pulido pre-lanzamiento — pendiente
+## Fase 8 — Pulido pre-lanzamiento ✅
 
-- [ ] Página 404 / error con estilo del tema
-- [ ] Meta tags / OG image
-- [ ] Custom domain (opcional)
-- [ ] Probar el flujo completo E2E con un usuario "ajeno"
+- [x] `app/not-found.tsx` con estilo del tema
+- [x] `app/error.tsx` con botón Reintentar + digest visible
+- [x] `app/opengraph-image.tsx` dinámica 1200×630 con tokens del YOY
+- [x] `app/icon.tsx` (favicon "PV" en fucsia, generado por code)
+- [x] Metadata completa en `layout.tsx`: OG, Twitter card, themeColor,
+      title template (`%s · Prode Vidrieras`), robots noindex (grupo
+      privado), viewport
+- [ ] Custom domain en Vercel (opcional, operativo)
+- [ ] Test E2E del registro con un email distinto al del admin (operativo)
 
 ## Deuda técnica explícita (post-MVP)
 
