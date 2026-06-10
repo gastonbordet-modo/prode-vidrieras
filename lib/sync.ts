@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { matches } from "@/db/schema";
+import { appState, matches } from "@/db/schema";
 import {
   fetchAllMatches,
   type ApiMatch,
@@ -127,6 +127,10 @@ export type SyncResult = {
   reprogrammed: number;
 };
 
+export const LAST_SYNC_KEY = "last_sync";
+
+export type LastSync = SyncResult & { at: string };
+
 export async function syncFromApi(): Promise<SyncResult> {
   const apiMatches = await fetchAllMatches();
   const mapped = apiMatches.map(mapMatch);
@@ -188,5 +192,21 @@ export async function syncFromApi(): Promise<SyncResult> {
       });
   }
 
-  return { total: apiMatches.length, created, updated, reprogrammed };
+  const result: SyncResult = {
+    total: apiMatches.length,
+    created,
+    updated,
+    reprogrammed,
+  };
+
+  const lastSync: LastSync = { at: new Date().toISOString(), ...result };
+  await db
+    .insert(appState)
+    .values({ key: LAST_SYNC_KEY, value: JSON.stringify(lastSync) })
+    .onConflictDoUpdate({
+      target: appState.key,
+      set: { value: sql`excluded.value`, updatedAt: new Date() },
+    });
+
+  return result;
 }

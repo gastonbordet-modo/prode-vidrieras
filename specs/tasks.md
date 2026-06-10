@@ -2,7 +2,7 @@
 
 Plan de ejecución del MVP + progreso real.
 
-## Estado actual (2026-06-07)
+## Estado actual (2026-06-10)
 
 - **Production**: https://prode-vidrieras-reservas-m.vercel.app
 - **GitHub**: https://github.com/gastonbordet-modo/prode-vidrieras
@@ -10,9 +10,9 @@ Plan de ejecución del MVP + progreso real.
   `POSTGRES_URL`, `NEXT_PUBLIC_SUPABASE_*` auto-inyectadas)
 - **Cron**: `0 5 * * *` UTC en Vercel — `/api/cron/sync` (auth por
   `Authorization: Bearer ${CRON_SECRET}`)
-- **Tests**: 37 verdes (`pnpm test`)
+- **Tests**: 52 verdes (`pnpm test`)
 - **Mundial 2026**: 104 partidos cargados en `matches`; arranca el
-  **11/6** (en 4 días)
+  **11/6** (mañana)
 
 ### Pendientes operativos (no son código)
 
@@ -27,9 +27,9 @@ Plan de ejecución del MVP + progreso real.
 
 ### Próximo paso recomendado
 
-**Fase 7 — Admin**. Permite moderar mientras el equipo se registra
-(borrar usuarios, ajustes manuales de puntos, sync manual de
-fixtures/resultados). Ver criterios de priorización abajo.
+**Fase 3c — Penales en eliminatorias** (deadline 28/6) o
+**Fase 4 — Ranking** (útil desde el 11/6). El admin ya está, así que
+podemos moderar mientras el equipo se registra.
 
 ---
 
@@ -113,13 +113,21 @@ fixtures/resultados). Ver criterios de priorización abajo.
       TBD, GROUP_STAGE, LAST_32 con formato 48 equipos, etc.)
 - [x] Bulk upsert con `onConflictDoUpdate` (1 query, ~3s para 104 rows)
 
-## Fase 7 — Admin (feature 004) — pendiente
+## Fase 7 — Admin (feature 004) ✅
 
-- [ ] Layout `/admin/*` protegido por `role='admin'` (404 si no es admin)
-- [ ] `/admin/users` lista usuarios con borrar
-- [ ] `/admin/users/[id]/adjust` form de ajuste de puntos
-- [ ] `/admin/sync` con botones "Sync ahora"
-- [ ] Pequeño dashboard: última corrida del cron, total predictions, etc.
+- [x] `requireAdmin()` en `lib/auth.ts` con `notFound()` si no es admin
+- [x] Layout `/admin/*` protegido + nav bar (Users / Sync / Volver)
+- [x] `/admin/users` con tabla (nickname, email, role, alta, #pred, puntos)
+      + borrar con confirm() nativo + cascade en FKs
+- [x] `/admin/users/[id]/adjust` con form (Zod) + lista de ajustes previos
+- [x] `/admin/sync` con botón "Sync ahora" + última corrida (timestamp +
+      counts) leyendo de `app_state.last_sync`
+- [x] `lib/user-stats.ts` (función pura) + 6 tests
+- [x] `syncFromApi()` persiste `last_sync` en `app_state` (cron + manual
+      lo comparten)
+- [x] Link "Admin" en header del home sólo para `role='admin'`
+- [x] Edge cases: admin no puede borrarse ni ajustarse a sí mismo
+      (disabled + guard server-side)
 
 ## Fase 8 — Pulido pre-lanzamiento — pendiente
 

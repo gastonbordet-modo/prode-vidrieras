@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { users, type users as usersTable } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
@@ -29,4 +29,17 @@ export async function requireUser(): Promise<{
   if (!user) redirect("/onboarding");
 
   return { authUserId: authUser.id, user };
+}
+
+/**
+ * Igual que requireUser pero además exige role='admin'. Si no, 404
+ * (no redirect: no queremos exponer la existencia de /admin).
+ */
+export async function requireAdmin(): Promise<{
+  authUserId: string;
+  user: DbUser;
+}> {
+  const ctx = await requireUser();
+  if (ctx.user.role !== "admin") notFound();
+  return ctx;
 }

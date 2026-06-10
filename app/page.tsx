@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
+import Link from "next/link";
 import { db } from "@/db/client";
 import { matches, predictions } from "@/db/schema";
 import { getActiveRound } from "@/lib/active-round";
@@ -49,14 +50,24 @@ export default async function HomePage() {
             {user.nickname}
           </strong>
         </span>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="text-system-links text-sm underline-offset-4 hover:underline"
-          >
-            Salir
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          {user.role === "admin" && (
+            <Link
+              href="/admin"
+              className="text-system-links text-sm underline-offset-4 hover:underline"
+            >
+              Admin
+            </Link>
+          )}
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="text-system-links text-sm underline-offset-4 hover:underline"
+            >
+              Salir
+            </button>
+          </form>
+        </div>
       </header>
 
       {activeRound === null ? (
