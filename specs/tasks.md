@@ -26,9 +26,8 @@ Plan de ejecución del MVP + progreso real.
 
 ### Próximo paso recomendado
 
-**Fase 3c — Penales en eliminatorias** (deadline 28/6) o
-**Fase 5 — Historial** (desglose por partido con mi predicción vs el
-resultado real).
+**Fase 3c — Penales en eliminatorias** (deadline 28/6). Después
+**Fase 8 — Pulido pre-lanzamiento** (404 page, OG, etc.).
 
 ---
 
@@ -98,12 +97,16 @@ resultado real).
 - [x] 13 tests nuevos en `lib/ranking.test.ts`
 - [x] Link "Ranking" en header del home
 
-## Fase 5 — Historial — pendiente
+## Fase 5 — Historial (feature 006) ✅
 
-- [ ] `/historial` con fechas pasadas, navegación entre fechas
-- [ ] Desglose por partido: mi predicción vs resultado real
-- [ ] Puntos obtenidos por partido (usando `lib/scoring.ts`)
-- **Útil a partir del 14/6** (cuando haya 2+ fechas jugadas)
+- [x] `/historial` con dropdown de fechas finalizadas
+- [x] Reusa `getFinishedRounds` y `RoundSelect` (sin duplicar lógica)
+- [x] `HistoryMatchCard` con predicción + resultado real + puntos
+- [x] Chips de puntos diferenciados (Exacto / Ganador / parcial / 0)
+- [x] Edge cases: match postponed, sin predicción, partido scheduled
+- [x] `TeamDisplay` extraído de `MatchCard` para compartirlo
+- [x] Link "Historial" en el header del home
+- [x] Sin tests nuevos (UI sobre funciones puras ya testeadas)
 
 ## Fase 6 — Sync (feature 005) ✅
 

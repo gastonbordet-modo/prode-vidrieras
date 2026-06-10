@@ -57,6 +57,12 @@ export default async function HomePage() {
           >
             Ranking
           </Link>
+          <Link
+            href="/historial"
+            className="text-system-links text-sm underline-offset-4 hover:underline"
+          >
+            Historial
+          </Link>
           {user.role === "admin" && (
             <Link
               href="/admin"

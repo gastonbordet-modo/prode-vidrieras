@@ -3,6 +3,7 @@ import type { matches, predictions } from "@/db/schema";
 import { getGroupColor } from "@/lib/group-colors";
 import { isMatchEditable } from "@/lib/match-editable";
 import { PredictionForm } from "./prediction-form";
+import { TeamDisplay } from "./team-display";
 
 type Match = typeof matches.$inferSelect;
 type Prediction = typeof predictions.$inferSelect;
@@ -47,45 +48,6 @@ function tintedStyle(color: string | null): CSSProperties | undefined {
     borderColor: `color-mix(in oklab, ${color} 55%, transparent)`,
     boxShadow: `0 0 28px -6px color-mix(in oklab, ${color} 45%, transparent)`,
   };
-}
-
-function TeamDisplay({
-  name,
-  crest,
-  score,
-}: {
-  name: string;
-  crest: string | null;
-  score: number | null;
-}) {
-  const isTbd = name === "TBD";
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
-        {crest ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={crest}
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 shrink-0"
-            loading="lazy"
-          />
-        ) : (
-          <div className="bg-opacity-white-12 h-7 w-7 shrink-0 rounded-sm" />
-        )}
-        {isTbd ? (
-          <span className="text-text-gray truncate italic">Por definir</span>
-        ) : (
-          <span className="text-text-dark truncate font-semibold">{name}</span>
-        )}
-      </div>
-      <span className="text-text-dark shrink-0 text-xl font-bold tabular-nums">
-        {score ?? "–"}
-      </span>
-    </div>
-  );
 }
 
 export function MatchCard({
