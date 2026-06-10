@@ -40,14 +40,16 @@ Pasos:
 2. Validar input con Zod.
 3. `SELECT match WHERE id = matchId`.
 4. Reglas de negocio:
-   - `now < match.kickoff_at` (lock)
-   - si `penaltyWinner !== null`:
-     - `match.is_knockout === true`
-     - `input.homeScore === input.awayScore`
-5. Upsert en `predictions` (UNIQUE en `user_id + match_id`).
-   - guardar `penalty_winner` como el nombre del equipo (no "home"/"away"),
-     resolviendo desde `match`.
-6. `revalidatePath('/')` y `revalidatePath('/ranking')`.
+   - `now < match.kickoff_at` (lock — vía `getLockReason`).
+   - `penaltyWinner` se resuelve con `lib/penalty-winner.ts`:
+     - Si `match.is_knockout` y `homeScore === awayScore` y el side está
+       seteado → se persiste el **nombre del equipo** (no `"home"`/`"away"`).
+     - Si no aplica (no knockout / no empate / side null) → se persiste
+       `null`. No se rechaza: el form auto-guarda incluso sin elegir.
+5. Upsert en `predictions` (UNIQUE en `user_id + match_id`). Sobreescribe
+   `penalty_winner` con el valor resuelto, así cambiar 2-2 → 3-2 limpia
+   el ganador por penales que ya no aplica.
+6. `revalidatePath('/')`.
 
 ## Fecha activa
 

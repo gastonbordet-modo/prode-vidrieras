@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { matches, predictions } from "@/db/schema";
 import { getGroupColor } from "@/lib/group-colors";
 import { isMatchEditable } from "@/lib/match-editable";
+import { deriveSideFromTeam } from "@/lib/penalty-winner";
 import { PredictionForm } from "./prediction-form";
 import { TeamDisplay } from "./team-display";
 
@@ -92,9 +93,15 @@ export function MatchCard({
           matchId={match.id}
           home={{ name: match.homeTeam, crest: match.homeTeamCrest }}
           away={{ name: match.awayTeam, crest: match.awayTeamCrest }}
+          isKnockout={match.isKnockout}
           existing={{
             home: prediction?.homeScore ?? null,
             away: prediction?.awayScore ?? null,
+            penaltyWinner: deriveSideFromTeam(
+              prediction?.penaltyWinner ?? null,
+              match.homeTeam,
+              match.awayTeam,
+            ),
           }}
         />
       ) : (
@@ -110,7 +117,7 @@ export function MatchCard({
             score={match.awayScore}
           />
 
-          {!match.isKnockout && <PredictionReadOnly prediction={prediction} />}
+          <PredictionReadOnly prediction={prediction} />
         </div>
       )}
     </article>
@@ -131,6 +138,15 @@ function PredictionReadOnly({ prediction }: { prediction: Prediction | null }) {
       <strong className="text-text-dark font-semibold tabular-nums">
         {prediction.homeScore} - {prediction.awayScore}
       </strong>
+      {prediction.penaltyWinner && (
+        <>
+          {" "}
+          · penales:{" "}
+          <strong className="text-text-dark font-semibold">
+            {prediction.penaltyWinner}
+          </strong>
+        </>
+      )}
     </p>
   );
 }

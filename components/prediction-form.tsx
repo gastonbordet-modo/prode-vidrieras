@@ -3,46 +3,80 @@
 import { Check } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { submitPrediction } from "@/app/actions";
+import { isPenaltyApplicable } from "@/lib/match-editable";
+import type { PenaltySide } from "@/lib/penalty-winner";
 import { NumberStepper } from "./number-stepper";
 
 type TeamInfo = { name: string; crest: string | null };
 
 const DEBOUNCE_MS = 1000;
 
+type SavedState = {
+  home: number;
+  away: number;
+  penaltyWinner: PenaltySide | null;
+};
+
 export function PredictionForm({
   matchId,
   home,
   away,
+  isKnockout,
   existing,
 }: {
   matchId: number;
   home: TeamInfo;
   away: TeamInfo;
-  existing: { home: number | null; away: number | null };
+  isKnockout: boolean;
+  existing: {
+    home: number | null;
+    away: number | null;
+    penaltyWinner: PenaltySide | null;
+  };
 }) {
   const [homeScore, setHomeScore] = useState<number | null>(existing.home);
   const [awayScore, setAwayScore] = useState<number | null>(existing.away);
-  const [lastSaved, setLastSaved] = useState<{
-    home: number;
-    away: number;
-  } | null>(
+  const [penaltyWinner, setPenaltyWinner] = useState<PenaltySide | null>(
+    existing.penaltyWinner,
+  );
+  const [lastSaved, setLastSaved] = useState<SavedState | null>(
     existing.home !== null && existing.away !== null
-      ? { home: existing.home, away: existing.away }
+      ? {
+          home: existing.home,
+          away: existing.away,
+          penaltyWinner: existing.penaltyWinner,
+        }
       : null,
   );
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-save: cuando ambos scores están seteados y son distintos al último
-  // guardado, dispara la acción de servidor después de DEBOUNCE_MS de
-  // inactividad. El cleanup cancela timers pendientes si el user sigue
-  // tocando.
+  const showPenaltyPicker = isPenaltyApplicable(
+    isKnockout,
+    homeScore,
+    awayScore,
+  );
+
+  // Auto-save: cuando los scores están seteados y algún campo difiere del
+  // último guardado, dispara la acción después del debounce.
   useEffect(() => {
     if (homeScore === null || awayScore === null) return;
+
+    // Si el partido no aplica penales o no hay empate, ignoramos el
+    // penaltyWinner local para la comparación: lo manda como null.
+    const effectivePenalty = isPenaltyApplicable(
+      isKnockout,
+      homeScore,
+      awayScore,
+    )
+      ? penaltyWinner
+      : null;
+
     if (
       lastSaved &&
       homeScore === lastSaved.home &&
-      awayScore === lastSaved.away
+      awayScore === lastSaved.away &&
+      effectivePenalty === lastSaved.penaltyWinner
     ) {
       return;
     }
@@ -52,6 +86,7 @@ export function PredictionForm({
       fd.set("matchId", String(matchId));
       fd.set("homeScore", String(homeScore));
       fd.set("awayScore", String(awayScore));
+      fd.set("penaltyWinner", effectivePenalty ?? "");
 
       startTransition(async () => {
         const result = await submitPrediction(null, fd);
@@ -59,18 +94,23 @@ export function PredictionForm({
           setError(result.error);
         } else if (result?.ok) {
           setError(null);
-          setLastSaved({ home: homeScore, away: awayScore });
+          setLastSaved({
+            home: homeScore,
+            away: awayScore,
+            penaltyWinner: effectivePenalty,
+          });
         }
       });
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [homeScore, awayScore, matchId, lastSaved]);
+  }, [homeScore, awayScore, penaltyWinner, matchId, lastSaved, isKnockout]);
 
   const isSaved =
     lastSaved !== null &&
     homeScore === lastSaved.home &&
-    awayScore === lastSaved.away;
+    awayScore === lastSaved.away &&
+    (showPenaltyPicker ? penaltyWinner : null) === lastSaved.penaltyWinner;
 
   return (
     <>
@@ -81,9 +121,6 @@ export function PredictionForm({
             value={homeScore}
             onChange={(next) => {
               setHomeScore(next);
-              // Si es el primer score que se carga, llenamos el otro con 0
-              // para que el debounce pueda dispararse sin obligar al user
-              // a tocar los dos lados.
               if (next !== null && awayScore === null) setAwayScore(0);
             }}
             ariaLabel={`Goles de ${home.name}`}
@@ -104,6 +141,29 @@ export function PredictionForm({
         }
       />
 
+      {showPenaltyPicker && (
+        <div className="border-opacity-white-12 -mx-4 flex flex-col gap-2 border-t px-4 pt-3">
+          <span className="text-text-gray text-xs">¿Quién gana por penales?</span>
+          <div className="grid grid-cols-2 gap-2">
+            <PenaltyOption
+              label={home.name === "TBD" ? "Local" : home.name}
+              selected={penaltyWinner === "home"}
+              onClick={() => setPenaltyWinner("home")}
+            />
+            <PenaltyOption
+              label={away.name === "TBD" ? "Visitante" : away.name}
+              selected={penaltyWinner === "away"}
+              onClick={() => setPenaltyWinner("away")}
+            />
+          </div>
+          {penaltyWinner === null && (
+            <p className="text-system-warning-dark text-xs">
+              Si no elegís, no podés ganar el bonus de +5 por penales.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex min-h-[1.25rem] items-center justify-end">
         {error ? (
           <p role="alert" className="text-system-error-dark text-xs">
@@ -119,6 +179,32 @@ export function PredictionForm({
         ) : null}
       </div>
     </>
+  );
+}
+
+function PenaltyOption({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={
+        "rounded-md border px-3 py-2 text-sm font-semibold transition-colors " +
+        (selected
+          ? "bg-default text-text-button border-default"
+          : "border-opacity-white-12 text-text-light hover:border-default")
+      }
+    >
+      {label}
+    </button>
   );
 }
 

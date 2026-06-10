@@ -158,6 +158,15 @@ export function HistoryMatchCard({
               <strong className="text-text-dark font-semibold tabular-nums">
                 {prediction.homeScore} - {prediction.awayScore}
               </strong>
+              {prediction.penaltyWinner && (
+                <>
+                  {" "}
+                  · penales:{" "}
+                  <strong className="text-text-dark font-semibold">
+                    {prediction.penaltyWinner}
+                  </strong>
+                </>
+              )}
             </span>
             {scored ? (
               pointsBadge(scored.points, scored.isExact)

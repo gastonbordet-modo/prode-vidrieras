@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getLockReason, isMatchEditable } from "./match-editable";
+import {
+  getLockReason,
+  isMatchEditable,
+  isPenaltyApplicable,
+} from "./match-editable";
 
 const T0 = Date.parse("2026-06-11T19:00:00Z");
 const ONE_MIN = 60_000;
@@ -9,12 +13,11 @@ const match = (
 ) => ({
   status: "scheduled" as const,
   kickoffAt: new Date(T0),
-  isKnockout: false,
   ...overrides,
 });
 
 describe("getLockReason", () => {
-  it("scheduled + grupo + kickoff futuro → null (editable)", () => {
+  it("scheduled + kickoff futuro → null (editable)", () => {
     expect(getLockReason(match(), T0 - ONE_MIN)).toBeNull();
   });
 
@@ -43,19 +46,6 @@ describe("getLockReason", () => {
       "not_scheduled",
     );
   });
-
-  it("knockout gana sobre cualquier otro check", () => {
-    // Aunque sea scheduled y futuro, knockout queda bloqueado en 3b.
-    expect(getLockReason(match({ isKnockout: true }), T0 - ONE_MIN)).toBe(
-      "knockout",
-    );
-  });
-
-  it("knockout pisa a 'already_started' (orden de evaluación)", () => {
-    expect(getLockReason(match({ isKnockout: true }), T0 + ONE_MIN)).toBe(
-      "knockout",
-    );
-  });
 });
 
 describe("isMatchEditable", () => {
@@ -65,8 +55,26 @@ describe("isMatchEditable", () => {
     expect(isMatchEditable(match({ status: "live" }), T0 - ONE_MIN)).toBe(
       false,
     );
-    expect(isMatchEditable(match({ isKnockout: true }), T0 - ONE_MIN)).toBe(
-      false,
-    );
+  });
+});
+
+describe("isPenaltyApplicable", () => {
+  it("knockout + empate cargado → true", () => {
+    expect(isPenaltyApplicable(true, 1, 1)).toBe(true);
+    expect(isPenaltyApplicable(true, 0, 0)).toBe(true);
+  });
+
+  it("knockout sin empate → false", () => {
+    expect(isPenaltyApplicable(true, 2, 1)).toBe(false);
+  });
+
+  it("grupo (no knockout) → false aunque haya empate", () => {
+    expect(isPenaltyApplicable(false, 1, 1)).toBe(false);
+  });
+
+  it("scores incompletos → false", () => {
+    expect(isPenaltyApplicable(true, null, 1)).toBe(false);
+    expect(isPenaltyApplicable(true, 1, null)).toBe(false);
+    expect(isPenaltyApplicable(true, null, null)).toBe(false);
   });
 });

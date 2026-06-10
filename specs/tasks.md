@@ -10,7 +10,7 @@ Plan de ejecución del MVP + progreso real.
   `POSTGRES_URL`, `NEXT_PUBLIC_SUPABASE_*` auto-inyectadas)
 - **Cron**: `0 5 * * *` UTC en Vercel — `/api/cron/sync` (auth por
   `Authorization: Bearer ${CRON_SECRET}`)
-- **Tests**: 65 verdes (`pnpm test`)
+- **Tests**: 76 verdes (`pnpm test`)
 - **Mundial 2026**: 104 partidos cargados en `matches`; arrancó el **11/6**
 
 ### Pendientes operativos (no son código)
@@ -26,8 +26,8 @@ Plan de ejecución del MVP + progreso real.
 
 ### Próximo paso recomendado
 
-**Fase 3c — Penales en eliminatorias** (deadline 28/6). Después
-**Fase 8 — Pulido pre-lanzamiento** (404 page, OG, etc.).
+**Fase 8 — Pulido pre-lanzamiento** (404 page, OG, etc.). El MVP está
+feature-complete.
 
 ---
 
@@ -77,13 +77,22 @@ Plan de ejecución del MVP + progreso real.
 - [x] NumberStepper custom con +/- (iconos lucide), sin spinners
       nativos del browser.
 
-### 3c — Penales en eliminatorias (pendiente)
+### 3c — Penales en eliminatorias ✅
 
-- [ ] Si `is_knockout` + predicción empate → select "ganador por penales"
-- [ ] Server Action acepta y valida `penaltyWinner`
-- [ ] Resolver "home"/"away" al nombre real del equipo en server
-- [ ] Tests de validación
-- **Deadline**: antes del 28/6 (arranque de eliminatorias)
+- [x] Removido el lock de `knockout` en `lib/match-editable.ts`
+- [x] `isPenaltyApplicable()` decide cuándo mostrar el picker (knockout
+      + empate cargado en la predicción)
+- [x] `lib/penalty-winner.ts` puro con `resolvePenaltyWinner()` +
+      `deriveSideFromTeam()` (persistimos team name, no "home"/"away")
+- [x] `submitPrediction` acepta `penaltyWinner` ("home"|"away"|null) y
+      lo resuelve server-side
+- [x] `PredictionForm` muestra dos botones cuando aplica + warning si
+      no eligió + auto-save reactivo al cambio
+- [x] Read-only de `MatchCard` muestra el ganador por penales si lo
+      cargaste
+- [x] `HistoryMatchCard` muestra el ganador por penales en la línea
+      del pronóstico
+- [x] 11 tests nuevos (4 de `isPenaltyApplicable`, 5+4 en `penalty-winner.test.ts`)
 
 ## Fase 4 — Ranking (feature 003) ✅
 
