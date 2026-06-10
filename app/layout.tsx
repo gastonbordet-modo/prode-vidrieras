@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
+import { BackToTop } from "@/components/back-to-top";
 import "./globals.css";
 
 const hanken = Hanken_Grotesk({
@@ -52,7 +53,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es-AR" className={hanken.variable}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <BackToTop />
+      </body>
     </html>
   );
 }
