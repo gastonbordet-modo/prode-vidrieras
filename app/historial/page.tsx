@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
-import Link from "next/link";
 import { RoundSelect } from "@/app/ranking/fecha/round-select";
 import { HistoryMatchCard } from "@/components/history-match-card";
+import { MainTabs } from "@/components/main-tabs";
 import { db } from "@/db/client";
 import { matches, predictions } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
@@ -25,7 +25,8 @@ export default async function HistorialPage({
   if (finishedRounds.length === 0) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-6">
-        <Header />
+        <MainTabs />
+        <h1 className="text-default text-xl font-bold">Historial</h1>
         <p className="text-text-gray py-8 text-center text-sm">
           Todavía no terminó ninguna fecha. Vení después del primer partido
           finalizado.
@@ -82,7 +83,8 @@ export default async function HistorialPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-4 py-6">
-      <Header />
+      <MainTabs />
+      <h1 className="text-default text-xl font-bold">Historial</h1>
 
       <section className="flex items-center justify-between gap-3">
         <div>
@@ -106,19 +108,5 @@ export default async function HistorialPage({
         ))}
       </section>
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex items-center justify-between">
-      <h1 className="text-default text-xl font-bold">Historial</h1>
-      <Link
-        href="/"
-        className="text-text-gray hover:text-text-light text-sm underline-offset-4 hover:underline"
-      >
-        Volver
-      </Link>
-    </header>
   );
 }

@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { matches, predictions } from "@/db/schema";
 import { getActiveRound } from "@/lib/active-round";
 import { requireUser } from "@/lib/auth";
+import { MainTabs } from "@/components/main-tabs";
 import { MatchCard } from "@/components/match-card";
 import { signOut } from "./actions";
 
@@ -51,18 +52,6 @@ export default async function HomePage() {
           </strong>
         </span>
         <div className="flex items-center gap-4">
-          <Link
-            href="/ranking"
-            className="text-system-links text-sm underline-offset-4 hover:underline"
-          >
-            Ranking
-          </Link>
-          <Link
-            href="/historial"
-            className="text-system-links text-sm underline-offset-4 hover:underline"
-          >
-            Historial
-          </Link>
           {user.role === "admin" && (
             <Link
               href="/admin"
@@ -81,6 +70,8 @@ export default async function HomePage() {
           </form>
         </div>
       </header>
+
+      <MainTabs />
 
       {activeRound === null ? (
         <EmptyState
