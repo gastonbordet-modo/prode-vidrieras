@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { submitPrediction } from "@/app/actions";
 import { NumberStepper } from "./number-stepper";
@@ -30,7 +30,7 @@ export function PredictionForm({
       ? { home: existing.home, away: existing.away }
       : null,
   );
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   // Auto-save: cuando ambos scores están seteados y son distintos al último
@@ -74,15 +74,6 @@ export function PredictionForm({
 
   return (
     <>
-      {pending && (
-        <div className="bg-background-home/60 absolute inset-0 z-10 grid place-items-center rounded-md backdrop-blur-sm">
-          <Loader2
-            className="text-default h-6 w-6 animate-spin"
-            strokeWidth={2.5}
-          />
-        </div>
-      )}
-
       <TeamLine
         team={home}
         stepper={
