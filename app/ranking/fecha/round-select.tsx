@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import type { RoundInfo } from "@/lib/ranking";
 
@@ -12,6 +12,7 @@ export function RoundSelect({
   selected: number;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
 
@@ -25,7 +26,7 @@ export function RoundSelect({
           const params = new URLSearchParams(searchParams);
           params.set("round", e.target.value);
           startTransition(() => {
-            router.replace(`/ranking/fecha?${params.toString()}`);
+            router.replace(`${pathname}?${params.toString()}`);
           });
         }}
         className="border-opacity-white-12 bg-background-container text-text-dark focus:border-default rounded-md border px-3 py-2 text-sm outline-none disabled:opacity-50"

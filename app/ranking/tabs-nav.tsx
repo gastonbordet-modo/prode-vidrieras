@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
-const tabs = [
-  { href: "/ranking", label: "General" },
-  { href: "/ranking/fecha", label: "Por fecha" },
-  { href: "/ranking/evolucion", label: "Evolución" },
-];
-
-export function TabsNav() {
+export function TabsNav({ basePath = "/ranking" }: { basePath?: string }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabs = [
+    { href: basePath, label: "General" },
+    { href: `${basePath}/fecha`, label: "Por fecha" },
+    { href: `${basePath}/evolucion`, label: "Evolución" },
+  ];
+  // Preservamos query params (ej. ?scenario=) al cambiar de tab.
+  const qs = searchParams.toString();
+  const suffix = qs ? `?${qs}` : "";
   return (
     <nav className="border-opacity-white-12 flex gap-1 border-b">
       {tabs.map((t) => {
@@ -18,7 +21,7 @@ export function TabsNav() {
         return (
           <Link
             key={t.href}
-            href={t.href}
+            href={`${t.href}${suffix}`}
             className={
               "px-3 py-2 text-sm transition-colors " +
               (active
