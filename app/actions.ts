@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { matches, predictions } from "@/db/schema";
+import { getLockReason } from "@/lib/match-editable";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signOut() {
@@ -46,21 +47,18 @@ export async function submitPrediction(
 
   const match = await db.query.matches.findFirst({
     where: eq(matches.id, parsed.data.matchId),
-    columns: { id: true, kickoffAt: true, isKnockout: true },
+    columns: { id: true, kickoffAt: true, isKnockout: true, status: true },
   });
   if (!match) return { error: "Partido no encontrado" };
 
-  if (Date.now() >= match.kickoffAt.getTime()) {
-    return { error: "El partido ya empezó, no se puede modificar" };
-  }
-
-  // En 3b no aceptamos predicciones para knockout — el form ni se renderiza,
-  // pero validamos server-side por las dudas. 3c agregará el ganador por
-  // penales para eliminatorias.
-  if (match.isKnockout) {
-    return {
-      error: "Los pronósticos de eliminatoria todavía no están disponibles",
+  const lockReason = getLockReason(match, Date.now());
+  if (lockReason !== null) {
+    const messages: Record<typeof lockReason, string> = {
+      knockout: "Los pronósticos de eliminatoria todavía no están disponibles",
+      not_scheduled: "El partido ya no acepta pronósticos",
+      already_started: "El partido ya empezó, no se puede modificar",
     };
+    return { error: messages[lockReason] };
   }
 
   await db

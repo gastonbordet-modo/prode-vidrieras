@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { matches, predictions } from "@/db/schema";
 import { getGroupColor } from "@/lib/group-colors";
+import { isMatchEditable } from "@/lib/match-editable";
 import { PredictionForm } from "./prediction-form";
 
 type Match = typeof matches.$inferSelect;
@@ -101,10 +102,7 @@ export function MatchCard({
   const groupColor = getGroupColor(match.groupName);
   const style = tintedStyle(groupColor);
 
-  const isEditable =
-    !match.isKnockout &&
-    match.status === "scheduled" &&
-    match.kickoffAt.getTime() > now;
+  const isEditable = isMatchEditable(match, now);
 
   return (
     <article
