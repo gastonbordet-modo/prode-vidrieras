@@ -51,6 +51,12 @@ export default async function HomePage() {
           </strong>
         </span>
         <div className="flex items-center gap-4">
+          <Link
+            href="/ranking"
+            className="text-system-links text-sm underline-offset-4 hover:underline"
+          >
+            Ranking
+          </Link>
           {user.role === "admin" && (
             <Link
               href="/admin"

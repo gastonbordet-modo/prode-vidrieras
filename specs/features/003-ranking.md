@@ -3,101 +3,78 @@
 ## User stories
 
 - Como participante quiero ver el ranking general del torneo.
-- Quiero ver también el ranking de la fecha activa.
+- Quiero ver el ranking de una fecha puntual (eligiendo entre las
+  fechas ya jugadas).
+- Quiero ver un gráfico de evolución que muestre cómo varían los
+  puntos acumulados de cada usuario fecha a fecha.
 
 ## Páginas
 
-- `/ranking` — pestañas (o secciones) "General" y "Fecha actual".
+`/ranking` con tres tabs:
 
-## Columnas mostradas
+- **General** (`/ranking`) — tabla con todos los usuarios.
+- **Por fecha** (`/ranking/fecha`) — dropdown con las fechas jugadas +
+  tabla del ranking de esa fecha.
+- **Evolución** (`/ranking/evolucion`) — gráfico de líneas con los
+  puntos acumulados por usuario fecha a fecha.
 
-| Posición | Nickname | Puntos | Exactos | Ajustes |
-| -------- | -------- | ------ | ------- | ------- |
+El layout (`app/ranking/layout.tsx`) hace `requireUser()` y renderiza
+las tabs. Cada tab es un segmento aparte → pages independientes,
+URL-shareables.
 
-- Exactos: cantidad de resultados exactos (sirve como criterio de
-  desempate y para que se vea).
-- Ajustes: si hubo, mostrar el delta agregado del usuario (con
-  tooltip de motivos). Default 0.
+## Columnas en la tabla
 
-## Query (ranking general)
+| Pos | Nickname | Pts | Exactos | Ajustes (solo general) |
+| --- | -------- | --- | ------- | ---------------------- |
 
-Vista lógica del query (en SQL real con Drizzle):
+- **Exactos**: cantidad de resultados exactos. Sirve como criterio
+  de desempate y para que se vea.
+- **Ajustes**: delta agregado del usuario. Solo se muestra en General;
+  en por-fecha la columna se omite y los ajustes no impactan el
+  cálculo (regla del reglamento: "los puntos impactarán únicamente en
+  el Ranking General").
 
-```sql
-WITH scored AS (
-  SELECT
-    p.user_id,
-    -- aplicar función de scoring (CASE expression replicada)
-    CASE
-      WHEN p.home_score = m.home_score AND p.away_score = m.away_score
-        THEN 12
-        + CASE
-            WHEN m.is_knockout
-             AND m.home_score = m.away_score
-             AND p.home_score = p.away_score
-             AND p.penalty_winner IS NOT NULL
-             AND p.penalty_winner = m.penalty_winner
-            THEN 5 ELSE 0 END
-      WHEN sign(p.home_score - p.away_score) = sign(m.home_score - m.away_score)
-        AND ((p.home_score = m.home_score) <> (p.away_score = m.away_score))
-        THEN 7
-      WHEN sign(p.home_score - p.away_score) = sign(m.home_score - m.away_score)
-        THEN 5
-        + CASE
-            WHEN m.is_knockout
-             AND m.home_score = m.away_score
-             AND p.home_score = p.away_score
-             AND p.penalty_winner IS NOT NULL
-             AND p.penalty_winner = m.penalty_winner
-            THEN 5 ELSE 0 END
-      WHEN ((p.home_score = m.home_score) <> (p.away_score = m.away_score))
-        THEN 2
-      ELSE 0
-    END AS pts,
-    (p.home_score = m.home_score AND p.away_score = m.away_score) AS is_exact
-  FROM predictions p
-  JOIN matches m ON m.id = p.match_id
-  WHERE m.status = 'finished'
-),
-totals AS (
-  SELECT user_id, SUM(pts) AS pts, SUM(is_exact::int) AS exacts
-  FROM scored
-  GROUP BY user_id
-),
-adjustments AS (
-  SELECT user_id, COALESCE(SUM(points), 0) AS adj_pts
-  FROM score_adjustments
-  GROUP BY user_id
-)
-SELECT
-  u.nickname,
-  u.created_at,
-  COALESCE(t.pts, 0) + COALESCE(a.adj_pts, 0) AS total_pts,
-  COALESCE(t.exacts, 0) AS exacts,
-  COALESCE(a.adj_pts, 0) AS adj_pts
-FROM users u
-LEFT JOIN totals t ON t.user_id = u.id
-LEFT JOIN adjustments a ON a.user_id = u.id
-ORDER BY total_pts DESC, exacts DESC, u.created_at ASC;
-```
+La fila del usuario logueado se destaca visualmente.
 
-Para el ranking **de la fecha activa** se filtra por `m.round_number = $active` y
-los ajustes no se suman (los ajustes solo afectan al ranking general,
-ver reglamento — "los puntos impactarán únicamente en el Ranking
-General").
+## Selector de fechas
 
-## Decisión: SQL vs TS para scoring
+- Lista solo fechas con al menos un partido `finished`. Hasta que el
+  Mundial no arrancó, la página muestra empty state.
+- Default: la fecha más reciente (la última de la lista).
+- Selección persistida en `?round=N` para que sea linkeable.
+- Las fechas reprogramadas (`originalRoundNumber` seteado) se
+  contabilizan en su fecha original, no en la fecha movida — así un
+  partido postergado no crea una "fecha fantasma" en el dropdown.
 
-- En **tests** y en operaciones puntuales (ver "mis puntos en un
-  partido"), usar la función TS de `lib/scoring.ts`.
-- En el **ranking** usamos SQL para no traer todas las predicciones a
-  Node y sumarlas en memoria.
-- **Riesgo**: dos fuentes de verdad para el algoritmo. Mitigación:
-  test de paridad que pasa los 14 casos de `scoring.md` por ambos
-  caminos y compara.
+## Gráfico de evolución
+
+- Eje X: nombre de la fecha jugada. Eje Y: puntos acumulados.
+- Una línea por usuario, color asignado por orden (paleta fija
+  inline tomada de tokens del YOY).
+- Tooltip al hover con la fecha y los puntos de cada usuario en
+  ese momento.
+- Acumulado, no por fecha. El último punto de cada serie coincide con
+  el total del Ranking General **sin ajustes** (los ajustes no entran
+  en la evolución, mismo principio que el ranking por fecha).
+- Vacío si todavía no se jugó nada.
+- Implementado con `recharts` (`<LineChart>` + `<ResponsiveContainer>`).
+
+## Cálculo: TS, no SQL
+
+- Toda la lógica vive en `lib/ranking.ts` con funciones puras que
+  reusan `score()` de `lib/scoring.ts`. Una sola fuente de verdad
+  del algoritmo, sin duplicación SQL/TS.
+- Con ~10 usuarios × 104 partidos no hay motivo para optimizar a SQL.
+  El query es un `findMany()` por tabla en paralelo.
+- Las funciones principales: `computeGeneralRanking`,
+  `computeRoundRanking`, `getFinishedRounds`, `computeEvolution`.
+- Desempate del general: `points DESC`, `exacts DESC`, `createdAt ASC`.
 
 ## Edge cases
 
-- Usuario sin predicciones todavía → fila con 0 puntos.
-- Usuario fue borrado → no aparece (LEFT JOIN desde users).
-- Match sin score aún → `WHERE m.status = 'finished'` lo excluye.
+- Sin usuarios registrados → tabla muestra mensaje vacío.
+- Sin partidos jugados → empty state en `/ranking/fecha` y
+  `/ranking/evolucion`.
+- Usuario sin predicciones → aparece con 0 puntos.
+- Match `status='finished'` sin score (no debería ocurrir, defensa):
+  el partido se filtra silenciosamente, no rompe el cálculo.

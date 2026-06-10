@@ -10,9 +10,8 @@ Plan de ejecución del MVP + progreso real.
   `POSTGRES_URL`, `NEXT_PUBLIC_SUPABASE_*` auto-inyectadas)
 - **Cron**: `0 5 * * *` UTC en Vercel — `/api/cron/sync` (auth por
   `Authorization: Bearer ${CRON_SECRET}`)
-- **Tests**: 52 verdes (`pnpm test`)
-- **Mundial 2026**: 104 partidos cargados en `matches`; arranca el
-  **11/6** (mañana)
+- **Tests**: 65 verdes (`pnpm test`)
+- **Mundial 2026**: 104 partidos cargados en `matches`; arrancó el **11/6**
 
 ### Pendientes operativos (no son código)
 
@@ -28,8 +27,8 @@ Plan de ejecución del MVP + progreso real.
 ### Próximo paso recomendado
 
 **Fase 3c — Penales en eliminatorias** (deadline 28/6) o
-**Fase 4 — Ranking** (útil desde el 11/6). El admin ya está, así que
-podemos moderar mientras el equipo se registra.
+**Fase 5 — Historial** (desglose por partido con mi predicción vs el
+resultado real).
 
 ---
 
@@ -87,14 +86,17 @@ podemos moderar mientras el equipo se registra.
 - [ ] Tests de validación
 - **Deadline**: antes del 28/6 (arranque de eliminatorias)
 
-## Fase 4 — Ranking (feature 003) — pendiente
+## Fase 4 — Ranking (feature 003) ✅
 
-- [ ] `/ranking` con tabs General / Fecha
-- [ ] Query SQL del ranking con tiebreakers (puntos, exactos,
-      created_at)
-- [ ] Test de paridad TS vs SQL del scoring (14 casos por ambos)
-- [ ] Indicador visual de "tu posición" en el ranking
-- **Útil a partir del 11/6** (cuando haya partidos finalizados)
+- [x] `/ranking` con tabs General / Por fecha / Evolución
+- [x] `lib/ranking.ts` puro reusando `score()` (sin SQL — se descarta
+      la dual-source TS/SQL de la spec original)
+- [x] Tiebreaker: puntos desc → exactos desc → createdAt asc
+- [x] Highlight de la fila del usuario logueado
+- [x] Dropdown de fechas jugadas en `/ranking/fecha`
+- [x] Gráfico de evolución acumulada con Recharts (`/ranking/evolucion`)
+- [x] 13 tests nuevos en `lib/ranking.test.ts`
+- [x] Link "Ranking" en header del home
 
 ## Fase 5 — Historial — pendiente
 

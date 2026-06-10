@@ -18,6 +18,9 @@ const finishedMatch = (id: number, home: number, away: number): StatsMatch => ({
   awayScore: away,
   penaltyWinner: null,
   isKnockout: false,
+  roundNumber: 1,
+  roundName: "Fase de grupos - Fecha 1",
+  originalRoundNumber: null,
 });
 
 const scheduledMatch = (id: number): StatsMatch => ({
@@ -29,6 +32,9 @@ const scheduledMatch = (id: number): StatsMatch => ({
   awayScore: null,
   penaltyWinner: null,
   isKnockout: false,
+  roundNumber: 1,
+  roundName: "Fase de grupos - Fecha 1",
+  originalRoundNumber: null,
 });
 
 const pred = (

@@ -23,6 +23,9 @@ export type StatsMatch = {
   awayScore: number | null;
   penaltyWinner: string | null;
   isKnockout: boolean;
+  roundNumber: number;
+  roundName: string;
+  originalRoundNumber: number | null;
 };
 
 export type StatsAdjustment = {
