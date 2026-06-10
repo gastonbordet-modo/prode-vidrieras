@@ -3,7 +3,7 @@ import type { matches, predictions } from "@/db/schema";
 import { getGroupColor } from "@/lib/group-colors";
 import { isMatchEditable } from "@/lib/match-editable";
 import { deriveSideFromTeam } from "@/lib/penalty-winner";
-import { PredictionForm } from "./prediction-form";
+import { PredictionForm, type PredictionAction } from "./prediction-form";
 import { TeamDisplay } from "./team-display";
 
 type Match = typeof matches.$inferSelect;
@@ -55,11 +55,14 @@ export function MatchCard({
   match,
   prediction,
   now,
+  action,
 }: {
   match: Match;
   prediction: Prediction | null;
   /** Timestamp del request, levantado al parent para mantener pura la card. */
   now: number;
+  /** Override del Server Action (solo lo usa /dev/predictions). */
+  action?: PredictionAction;
 }) {
   const groupLabel = formatGroup(match.groupName);
   const groupColor = getGroupColor(match.groupName);
@@ -103,6 +106,7 @@ export function MatchCard({
               match.awayTeam,
             ),
           }}
+          action={action}
         />
       ) : (
         <div className="flex flex-col gap-3">

@@ -2,12 +2,20 @@
 
 import { Check } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import { submitPrediction } from "@/app/actions";
+import {
+  submitPrediction,
+  type SubmitPredictionState,
+} from "@/app/actions";
 import { isPenaltyApplicable } from "@/lib/match-editable";
 import type { PenaltySide } from "@/lib/penalty-winner";
 import { NumberStepper } from "./number-stepper";
 
 type TeamInfo = { name: string; crest: string | null };
+
+export type PredictionAction = (
+  prev: SubmitPredictionState,
+  formData: FormData,
+) => Promise<SubmitPredictionState>;
 
 const DEBOUNCE_MS = 1000;
 
@@ -23,6 +31,7 @@ export function PredictionForm({
   away,
   isKnockout,
   existing,
+  action = submitPrediction,
 }: {
   matchId: number;
   home: TeamInfo;
@@ -33,6 +42,12 @@ export function PredictionForm({
     away: number | null;
     penaltyWinner: PenaltySide | null;
   };
+  /**
+   * Server Action que recibe el FormData. Default: el real
+   * `submitPrediction`. La sobrescribe `/dev/predictions` con un stub
+   * que no toca DB para previsualizar el form sin esperar al torneo.
+   */
+  action?: PredictionAction;
 }) {
   const [homeScore, setHomeScore] = useState<number | null>(existing.home);
   const [awayScore, setAwayScore] = useState<number | null>(existing.away);
@@ -89,7 +104,7 @@ export function PredictionForm({
       fd.set("penaltyWinner", effectivePenalty ?? "");
 
       startTransition(async () => {
-        const result = await submitPrediction(null, fd);
+        const result = await action(null, fd);
         if (result?.error) {
           setError(result.error);
         } else if (result?.ok) {
@@ -104,7 +119,15 @@ export function PredictionForm({
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [homeScore, awayScore, penaltyWinner, matchId, lastSaved, isKnockout]);
+  }, [
+    homeScore,
+    awayScore,
+    penaltyWinner,
+    matchId,
+    lastSaved,
+    isKnockout,
+    action,
+  ]);
 
   const isSaved =
     lastSaved !== null &&
