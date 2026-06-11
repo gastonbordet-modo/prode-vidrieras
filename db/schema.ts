@@ -8,6 +8,7 @@
 
 import {
   boolean,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -124,3 +125,59 @@ export const chatMessages = pgTable("chat_messages", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Apuestas 1X2 sobre un partido. El creador define partido, pick y monto.
+ * Ver specs/features/009-bets.md.
+ */
+export const bets = pgTable(
+  "bets",
+  {
+    id: serial("id").primaryKey(),
+    creatorId: uuid("creator_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    matchId: integer("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    pick: text("pick", { enum: ["home", "draw", "away"] }).notNull(),
+    amount: integer("amount").notNull(),
+    status: text("status", {
+      enum: ["open", "locked", "resolved", "cancelled"],
+    })
+      .notNull()
+      .default("open"),
+    // Lado ganador al resolver: 'pro' (coincide con el pick) o 'con'.
+    outcome: text("outcome", { enum: ["pro", "con"] }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [index("bets_match_id_idx").on(t.matchId), index("bets_status_idx").on(t.status)],
+);
+
+/**
+ * Participación de un usuario en una apuesta. El `side` se deriva de su
+ * pronóstico al sumarse y queda congelado (snapshot).
+ */
+export const betEntries = pgTable(
+  "bet_entries",
+  {
+    id: serial("id").primaryKey(),
+    betId: integer("bet_id")
+      .notNull()
+      .references(() => bets.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    side: text("side", { enum: ["pro", "con"] }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("bet_entries_bet_user_unique").on(t.betId, t.userId),
+    index("bet_entries_user_id_idx").on(t.userId),
+  ],
+);

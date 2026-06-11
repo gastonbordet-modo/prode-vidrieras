@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { appState, matches } from "@/db/schema";
+import { resolveFinishedBets } from "@/lib/bets";
 import {
   fetchAllMatches,
   type ApiMatch,
@@ -190,6 +191,15 @@ export async function syncFromApi(): Promise<SyncResult> {
           updatedAt: sql`excluded.updated_at`,
         },
       });
+  }
+
+  // Con los matches ya actualizados, resolvemos/lockeamos/cancelamos las
+  // apuestas que correspondan. Corre por cron y por el sync manual del admin.
+  // No rompemos el sync si la resolución falla: logueamos y seguimos.
+  try {
+    await resolveFinishedBets();
+  } catch (err) {
+    console.error("[sync] resolveFinishedBets failed:", err);
   }
 
   const result: SyncResult = {

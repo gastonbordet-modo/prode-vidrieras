@@ -26,7 +26,7 @@ general — la chicana tiene precio real.
 
 ## Página
 
-- `/apuestas` — protegida. Lista de apuestas de la fecha activa.
+- `/casino` — protegida. Lista de apuestas de la fecha activa.
   - Sección "Crear apuesta" arriba.
   - Lista de apuestas activas + cerradas + resueltas.
 
