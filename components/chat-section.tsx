@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useActionState,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -12,6 +12,7 @@ import {
   postChatMessage,
   type PostChatMessageState,
 } from "@/app/actions";
+import type { ChatMessagesResponse } from "@/app/api/chat/messages/route";
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_LEN = 500;
@@ -37,6 +38,14 @@ export type ChatMessageRow = {
   createdAt: string; // ISO
 };
 
+function maxId(messages: ChatMessageRow[]): number {
+  let max = 0;
+  for (const m of messages) {
+    if (m.id > max) max = m.id;
+  }
+  return max;
+}
+
 export function ChatSection({
   initialMessages,
   currentUserId,
@@ -44,27 +53,66 @@ export function ChatSection({
   initialMessages: ChatMessageRow[];
   currentUserId: string;
 }) {
-  const router = useRouter();
+  const [messages, setMessages] = useState<ChatMessageRow[]>(initialMessages);
   const [text, setText] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const inFlightRef = useRef<AbortController | null>(null);
+  const lastSeenIdRef = useRef<number>(maxId(initialMessages));
+
+  const pollOnce = useCallback(async () => {
+    inFlightRef.current?.abort();
+    const ctrl = new AbortController();
+    inFlightRef.current = ctrl;
+
+    try {
+      const since = lastSeenIdRef.current;
+      const res = await fetch(`/api/chat/messages?since=${since}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
+      if (!res.ok) return;
+      const body = (await res.json()) as ChatMessagesResponse;
+
+      setMessages((prev) => {
+        if (body.truncated) {
+          lastSeenIdRef.current = maxId(body.messages);
+          return body.messages;
+        }
+        if (body.messages.length === 0) return prev;
+        const next = [...prev, ...body.messages];
+        lastSeenIdRef.current = maxId(next);
+        return next;
+      });
+    } catch (err) {
+      if ((err as { name?: string }).name === "AbortError") return;
+      console.error("[chat] poll failed:", err);
+    } finally {
+      if (inFlightRef.current === ctrl) inFlightRef.current = null;
+    }
+  }, []);
 
   const [state, action, pending] = useActionState<
     PostChatMessageState,
     FormData
   >(async (prev, formData) => {
     const result = await postChatMessage(prev, formData);
-    if (result?.ok) setText("");
+    if (result?.ok) {
+      setText("");
+      // Forzamos un poll inmediato para ver nuestro propio mensaje sin
+      // esperar al próximo tick.
+      void pollOnce();
+    }
     return result;
   }, null);
 
-  // Polling: refresca data del server cada 5s mientras la pestaña está visible.
+  // Polling cada 5s mientras la pestaña está visible.
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
 
     function start() {
       if (timer) return;
-      timer = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
+      timer = setInterval(() => void pollOnce(), POLL_INTERVAL_MS);
     }
     function stop() {
       if (!timer) return;
@@ -73,10 +121,11 @@ export function ChatSection({
     }
     function onVisibility() {
       if (document.visibilityState === "visible") {
-        router.refresh();
+        void pollOnce();
         start();
       } else {
         stop();
+        inFlightRef.current?.abort();
       }
     }
 
@@ -85,17 +134,17 @@ export function ChatSection({
 
     return () => {
       stop();
+      inFlightRef.current?.abort();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [router]);
+  }, [pollOnce]);
 
-  // Auto-scroll al pie del contenedor cuando llega un mensaje nuevo (o al
-  // primer mount). Usamos scrollTop directo para que el scroll se limite
-  // al contenedor del chat sin mover el resto de la página.
+  // Auto-scroll al pie del contenedor cuando cambia la cantidad de
+  // mensajes (primer mount o mensaje nuevo).
   useEffect(() => {
     const c = scrollContainerRef.current;
     if (c) c.scrollTop = c.scrollHeight;
-  }, [initialMessages.length]);
+  }, [messages.length]);
 
   const remaining = MAX_LEN - text.length;
   const showCounter = text.length > 400;
@@ -121,12 +170,12 @@ export function ChatSection({
         ref={scrollContainerRef}
         className="bg-background-container border-opacity-white-12 flex h-[35vh] min-h-[180px] flex-col gap-2 overflow-y-auto rounded-md border p-3"
       >
-        {initialMessages.length === 0 ? (
+        {messages.length === 0 ? (
           <p className="text-text-gray flex flex-1 items-center justify-center text-center text-sm">
             Todavía nadie dijo nada. Tirá la primera.
           </p>
         ) : (
-          initialMessages.map((m) => {
+          messages.map((m) => {
             const mine = m.userId === currentUserId;
             return (
               <div

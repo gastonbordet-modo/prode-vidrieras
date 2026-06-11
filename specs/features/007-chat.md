@@ -69,14 +69,48 @@ Pasos:
 
 Polling client-side cada **5 segundos** mientras la pestaña está
 visible (`document.visibilityState === 'visible'`). Cuando vuelve a
-foreground, fuerza un refetch inmediato vía `router.refresh()`.
+foreground, fuerza un refetch inmediato.
 
-Trade-off conocido: como el chat vive en home, `router.refresh()`
-re-corre todas las queries de la home (matches, predicciones). Con 10
-personas y poca data por fecha es trivial. Si se vuelve notable,
-migrar a un endpoint dedicado.
+El cliente hace `fetch` a un endpoint dedicado en lugar de
+`router.refresh()` para no re-correr las queries de matches y
+predicciones de la home en cada tick.
+
+### Endpoint: `GET /api/chat/messages?since=<id>`
+
+- Auth: sesión Supabase via cookies (`createClient()` + `getUser()`).
+  Si no hay usuario → `401`.
+- Query: `since` (entero, default `0`). Devuelve mensajes con
+  `id > since`, ordenados ascendente por `created_at`.
+- Respuesta:
+  ```ts
+  type ChatMessagesResponse = {
+    messages: Array<{
+      id: number;
+      userId: string;
+      nickname: string;
+      text: string;
+      createdAt: string; // ISO
+    }>;
+    truncated: boolean;
+  };
+  ```
+- Edge case truncate: si `since > maxId(server)`, el cliente está
+  por delante del server (el cron limpió entre polls). Devolvemos
+  `truncated: true` y la lista completa actual. El cliente
+  reemplaza su estado local en vez de hacer append.
+
+### Cliente
+
+- State local `messages` inicializado con los mensajes del SSR (la
+  home consulta y los pasa como prop). Polling después.
+- `lastSeenIdRef` guarda el max id visto; se manda como `since`.
+- `AbortController` cancela el fetch en vuelo cuando empieza otro o
+  cambia visibilidad / unmount.
+- Después de un submit exitoso, dispara un poll inmediato para
+  mostrar el propio mensaje sin esperar al próximo tick.
 
 Decisión: no usamos realtime (Supabase Realtime / WS) en v1.
+Polling es suficiente para 10 personas.
 
 ## Cron de limpieza
 
