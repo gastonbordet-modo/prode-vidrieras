@@ -26,9 +26,16 @@ Plan de ejecución del MVP + progreso real.
 
 ### Próximo paso recomendado
 
-MVP completo. Próximos pasos sugeridos (deuda técnica post-MVP):
-**Ver pronósticos del resto después del kickoff**, **notificaciones
-por mail antes de cada fecha**, o **custom domain en Vercel**.
+MVP completo. Próxima tanda de features (sociales / interactividad)
+specificadas en `specs/features/`:
+
+1. **Fase 9 — Chat por fecha** (`007-chat.md`)
+2. **Fase 10 — Tags de folklore** (`008-tags.md`)
+3. **Fase 11 — Apuestas** (`009-bets.md`)
+
+Orden sugerido: chat primero (habilita la chicana base), tags
+después (100% lectura sobre datos existentes), apuestas al final (es
+la más invasiva y se beneficia del chat).
 
 ---
 
@@ -156,10 +163,49 @@ por mail antes de cada fecha**, o **custom domain en Vercel**.
 - [ ] Custom domain en Vercel (opcional, operativo)
 - [ ] Test E2E del registro con un email distinto al del admin (operativo)
 
+## Fase 9 — Chat por fecha (feature 007)
+
+Ver `specs/features/007-chat.md`.
+
+- [ ] Migración: tabla `chat_messages` (id, user_id, text, created_at)
+- [ ] `/chat` con lista + form + auto-scroll + polling 5s
+- [ ] Server Action `postChatMessage` con validación Zod (1..500)
+- [ ] `/api/cron/clear-chat` con lógica de ventana 24h post-última-fecha
+- [ ] Sumar schedule diario en `vercel.json`
+- [ ] Botón "Limpiar chat ahora" en `/admin/sync`
+- [ ] Link "Chat" en header del home
+
+## Fase 10 — Tags de folklore (feature 008)
+
+Ver `specs/features/008-tags.md`.
+
+- [ ] `lib/tags.ts` puro con `computeTags()` + tests por tag
+- [ ] `lib/tag-styles.ts` con paleta de 5 colores del theme + mapeo
+- [ ] Componente `<TagChip>` con tooltip
+- [ ] Integración en `/ranking`, `/historial`, `/chat`, header del home
+- [ ] Tests: positivos + negativos por tag, regla de los 3 cupos,
+      racha de Brujita, ranking Cebollita
+
+## Fase 11 — Apuestas (feature 009)
+
+Ver `specs/features/009-bets.md`.
+
+- [ ] Migración: tablas `bets` y `bet_entries` con índices
+- [ ] `lib/bet-side.ts` puro (derivación pro/con) + tests
+- [ ] `lib/bet-resolution.ts` puro (cálculo del payout) + tests
+- [ ] Server Actions `createBet` y `joinBet` con todos los guards
+- [ ] `resolveFinishedBets()` integrada al final del cron de sync
+- [ ] `/apuestas` con form de creación + lista + preview de payout
+- [ ] Reusar `score_adjustments` para impactar el ranking en cada
+      resolución
+- [ ] Mostrar balance disponible (ranking - comprometido) en `/apuestas`
+- [ ] Link "Apuestas" en header del home
+
 ## Deuda técnica explícita (post-MVP)
 
 - Notificaciones por mail antes de cada fecha
-- Ver pronósticos del resto después del kickoff
+- Ver pronósticos del resto después del kickoff (parcialmente cubierto
+  por chat + apuestas — la gente va a decir lo que apostó)
 - RLS en Supabase (hoy valido en Server Actions)
 - Cache del query de ranking (hoy se calcula on the fly)
 - Logo / branding propio
