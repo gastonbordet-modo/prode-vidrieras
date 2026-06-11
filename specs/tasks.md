@@ -10,7 +10,7 @@ Plan de ejecución del MVP + progreso real.
   `POSTGRES_URL`, `NEXT_PUBLIC_SUPABASE_*` auto-inyectadas)
 - **Cron**: `0 5 * * *` UTC en Vercel — `/api/cron/sync` (auth por
   `Authorization: Bearer ${CRON_SECRET}`)
-- **Tests**: 76 verdes (`pnpm test`)
+- **Tests**: 121 verdes (`pnpm test`)
 - **Mundial 2026**: 104 partidos cargados en `matches`; arrancó el **11/6**
 
 ### Pendientes operativos (no son código)
@@ -36,6 +36,9 @@ specificadas en `specs/features/`:
 Orden sugerido: chat primero (habilita la chicana base), tags
 después (100% lectura sobre datos existentes), apuestas al final (es
 la más invasiva y se beneficia del chat).
+
+**Estado**: Fase 9 (chat) ✅, Fase 11 (apuestas) ✅. Queda **Fase 10
+(tags de folklore)**.
 
 ---
 
@@ -186,20 +189,38 @@ Ver `specs/features/008-tags.md`.
 - [ ] Tests: positivos + negativos por tag, regla de los 3 cupos,
       racha de Brujita, ranking Cebollita
 
-## Fase 11 — Apuestas (feature 009)
+## Fase 11 — Apuestas (feature 009) ✅
 
 Ver `specs/features/009-bets.md`.
 
-- [ ] Migración: tablas `bets` y `bet_entries` con índices
-- [ ] `lib/bet-side.ts` puro (derivación pro/con) + tests
-- [ ] `lib/bet-resolution.ts` puro (cálculo del payout) + tests
-- [ ] Server Actions `createBet` y `joinBet` con todos los guards
-- [ ] `resolveFinishedBets()` integrada al final del cron de sync
-- [ ] `/apuestas` con form de creación + lista + preview de payout
-- [ ] Reusar `score_adjustments` para impactar el ranking en cada
-      resolución
-- [ ] Mostrar balance disponible (ranking - comprometido) en `/apuestas`
-- [ ] Link "Apuestas" en header del home
+- [x] Migración: tablas `bets` y `bet_entries` con índices
+      (`0003_yummy_kang.sql`)
+- [x] `lib/bet-side.ts` puro (derivación pro/con + `outcomeFromScore`) +
+      tests (9 combos)
+- [x] `lib/bet-resolution.ts` puro (`decideBet`: 1X2 real con penales,
+      lock, cancelación sin oponente, payout `floor(pot/winners)`, deltas
+      netos, postponed=noop) + tests
+- [x] `lib/bet-balance.ts` puro (`availableBalance`) + tests
+- [x] Server Actions `createBet` y `joinBet` con todos los guards
+- [x] `lib/bets.ts` `resolveFinishedBets()` integrada dentro de
+      `syncFromApi()` (corre por cron y por sync manual del admin)
+- [x] `/casino` con form de creación + lista con tabs (De la fecha /
+      Mis apuestas / Histórico) + preview de payout + botón Sumarme
+- [x] Reusar `score_adjustments` para impactar el ranking en cada
+      resolución. **Decisión de contabilidad**: las apuestas open/locked
+      solo "reservan" (no tocan el ranking); al resolver se escribe el
+      DELTA NETO (ganador = `payout - amount`, perdedor = `-amount`),
+      porque el stake nunca se descontó antes. El residuo de la división
+      sale de la economía.
+- [x] Mostrar balance disponible (ranking − comprometido) en `/casino`
+- [x] Link "Apuestas" en `MainTabs`
+- [x] 45 tests nuevos (bet-side, bet-resolution, bet-balance) — total 121
+
+### Pendiente operativo (no es código)
+
+- [ ] Aplicar la migración `0003_yummy_kang.sql` a Supabase
+      (`pnpm db:migrate` con `DATABASE_URL` apuntando a prod, o aplicarla
+      desde el SQL editor). Sin esto, `/casino` falla en prod.
 
 ## Deuda técnica explícita (post-MVP)
 
