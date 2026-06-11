@@ -16,6 +16,11 @@ const tabs = [
     label: "Historial",
     match: (p: string) => p === "/historial",
   },
+  {
+    href: "/chat",
+    label: "Chat",
+    match: (p: string) => p === "/chat",
+  },
 ];
 
 /**

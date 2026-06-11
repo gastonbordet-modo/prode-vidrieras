@@ -70,19 +70,28 @@ fecha.
 
 `/api/cron/clear-chat` — corre 1×/día (sumar a `vercel.json`).
 
-Lógica:
+Mantiene un cursor en `app_state` (`last_cleared_chat_round`) con el
+número de la última fecha cuyo chat ya fue limpiado. El cron avanza
+ese cursor cuando se cumple la ventana de 24h.
 
-1. Calcular `active_round_number` con `getActiveRoundNumber()` de
-   `lib/active-round.ts`.
-2. Buscar el `MAX(kickoff_at)` de partidos con
-   `round_number = active_round_number`.
-3. Si `now > max_kickoff_at + 24h` **y** existe una próxima fecha
-   con partidos `scheduled` → **truncar `chat_messages`**.
-4. Si no, no-op (estamos todavía en la ventana de cortesía o no hay
-   fecha siguiente).
+Lógica (en `lib/clear-chat.ts`, función pura `shouldClearChat`):
 
-El cron también devuelve `{ cleared: boolean, reason: string }` para
-el `/admin/sync` (ver más abajo).
+1. `active = getActiveRound()` (de `lib/active-round.ts`).
+2. `lastCleared = app_state.last_cleared_chat_round` (0 si nunca corrió).
+3. `previousRoundEndMs = MAX(kickoff_at)` de partidos con
+   `round_number = active - 1` (null si no existen).
+4. Decisión:
+   - `active === null` → no limpiar.
+   - `active <= lastCleared` → ya estamos al día, no limpiar.
+   - `previousRoundEndMs === null` (primera fecha) → avanzar cursor
+     sin truncar.
+   - `now - previousRoundEndMs < 24h` → ventana de cortesía, no
+     limpiar todavía.
+   - En cualquier otro caso → `TRUNCATE chat_messages` + avanzar
+     cursor a `active`.
+
+El cron también persiste en `app_state.last_chat_cron` un objeto
+`{ at, cleared, reason }` para mostrar en `/admin/sync`.
 
 ## Visibilidad en header
 
@@ -132,3 +141,10 @@ INDEX chat_messages(created_at)
 No hay `round_id` ni `round_number`: el chat es siempre "lo que está
 ahora" — la fecha se infiere del momento, y el cron se encarga de
 truncar.
+
+Además, en `app_state`:
+
+- `last_cleared_chat_round` — número (como text) de la última fecha
+  cuyo chat fue limpiado. Cursor del cron.
+- `last_chat_cron` — JSON `{ at, cleared, reason }` con la última
+  corrida, para mostrar en `/admin/sync`.

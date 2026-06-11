@@ -15,6 +15,13 @@
       "when": 1780875559859,
       "tag": "0001_green_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781136900952,
+      "tag": "0002_mysterious_red_wolf",
+      "breakpoints": true
     }
   ]
 }
