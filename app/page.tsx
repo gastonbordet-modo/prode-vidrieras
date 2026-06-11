@@ -1,9 +1,10 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db/client";
-import { matches, predictions } from "@/db/schema";
+import { chatMessages, matches, predictions, users } from "@/db/schema";
 import { getActiveRound } from "@/lib/active-round";
 import { requireUser } from "@/lib/auth";
+import { ChatSection, type ChatMessageRow } from "@/components/chat-section";
 import { MainTabs } from "@/components/main-tabs";
 import { MatchCard } from "@/components/match-card";
 import { signOut } from "./actions";
@@ -42,6 +43,25 @@ export default async function HomePage() {
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
+  const chatRows = await db
+    .select({
+      id: chatMessages.id,
+      userId: chatMessages.userId,
+      nickname: users.nickname,
+      text: chatMessages.text,
+      createdAt: chatMessages.createdAt,
+    })
+    .from(chatMessages)
+    .innerJoin(users, eq(users.id, chatMessages.userId))
+    .orderBy(asc(chatMessages.createdAt));
+  const initialChatMessages: ChatMessageRow[] = chatRows.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    nickname: r.nickname,
+    text: r.text,
+    createdAt: r.createdAt.toISOString(),
+  }));
+
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex items-center justify-between">
@@ -70,6 +90,11 @@ export default async function HomePage() {
           </form>
         </div>
       </header>
+
+      <ChatSection
+        initialMessages={initialChatMessages}
+        currentUserId={user.id}
+      />
 
       <MainTabs />
 

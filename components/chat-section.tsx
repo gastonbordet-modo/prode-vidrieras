@@ -8,8 +8,10 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { postChatMessage, type PostChatMessageState } from "./actions";
-import type { ChatMessageRow } from "./page";
+import {
+  postChatMessage,
+  type PostChatMessageState,
+} from "@/app/actions";
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_LEN = 500;
@@ -27,7 +29,15 @@ function formatTimestamp(iso: string): string {
   return timestampFormatter.format(new Date(iso));
 }
 
-export function ChatView({
+export type ChatMessageRow = {
+  id: number;
+  userId: string;
+  nickname: string;
+  text: string;
+  createdAt: string; // ISO
+};
+
+export function ChatSection({
   initialMessages,
   currentUserId,
 }: {
@@ -36,7 +46,7 @@ export function ChatView({
 }) {
   const router = useRouter();
   const [text, setText] = useState("");
-  const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [state, action, pending] = useActionState<
@@ -48,7 +58,7 @@ export function ChatView({
     return result;
   }, null);
 
-  // Polling: refresh server data cada 5s mientras la pestaña está visible.
+  // Polling: refresca data del server cada 5s mientras la pestaña está visible.
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -79,9 +89,12 @@ export function ChatView({
     };
   }, [router]);
 
-  // Auto-scroll al pie cuando llegan mensajes nuevos.
+  // Auto-scroll al pie del contenedor cuando llega un mensaje nuevo (o al
+  // primer mount). Usamos scrollTop directo para que el scroll se limite
+  // al contenedor del chat sin mover el resto de la página.
   useEffect(() => {
-    scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
+    const c = scrollContainerRef.current;
+    if (c) c.scrollTop = c.scrollHeight;
   }, [initialMessages.length]);
 
   const remaining = MAX_LEN - text.length;
@@ -99,8 +112,15 @@ export function ChatView({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
-      <div className="bg-background-container border-opacity-white-12 flex min-h-[60vh] flex-1 flex-col gap-2 overflow-y-auto rounded-md border p-3">
+    <section className="flex flex-col gap-2">
+      <h2 className="text-text-gray text-xs tracking-wider uppercase">
+        Chat
+      </h2>
+
+      <div
+        ref={scrollContainerRef}
+        className="bg-background-container border-opacity-white-12 flex h-[35vh] min-h-[180px] flex-col gap-2 overflow-y-auto rounded-md border p-3"
+      >
         {initialMessages.length === 0 ? (
           <p className="text-text-gray flex flex-1 items-center justify-center text-center text-sm">
             Todavía nadie dijo nada. Tirá la primera.
@@ -137,7 +157,6 @@ export function ChatView({
             );
           })
         )}
-        <div ref={scrollAnchorRef} />
       </div>
 
       <form
@@ -157,7 +176,7 @@ export function ChatView({
           className="bg-background-home-section border-opacity-white-12 text-text-light placeholder:text-text-gray focus:border-default rounded-md border px-3 py-2 text-sm outline-none"
           disabled={pending}
         />
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {showCounter ? (
             <span
               className={
@@ -186,6 +205,6 @@ export function ChatView({
           </button>
         </div>
       </form>
-    </div>
+    </section>
   );
 }

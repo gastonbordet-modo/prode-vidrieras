@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { matches, predictions } from "@/db/schema";
+import { chatMessages, matches, predictions } from "@/db/schema";
+import { requireUser } from "@/lib/auth";
 import { getLockReason } from "@/lib/match-editable";
 import { resolvePenaltyWinner } from "@/lib/penalty-winner";
 import { createClient } from "@/lib/supabase/server";
@@ -106,6 +107,43 @@ export async function submitPrediction(
         updatedAt: new Date(),
       },
     });
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+const MAX_CHAT_LEN = 500;
+
+const chatSchema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1, "El mensaje no puede estar vacío.")
+    .max(MAX_CHAT_LEN),
+});
+
+export type PostChatMessageState = {
+  ok?: true;
+  error?: string;
+} | null;
+
+export async function postChatMessage(
+  _prev: PostChatMessageState,
+  formData: FormData,
+): Promise<PostChatMessageState> {
+  const { user } = await requireUser();
+
+  const parsed = chatSchema.safeParse({ text: formData.get("text") });
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "El mensaje no es válido.",
+    };
+  }
+
+  await db.insert(chatMessages).values({
+    userId: user.id,
+    text: parsed.data.text,
+  });
 
   revalidatePath("/");
   return { ok: true };

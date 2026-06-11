@@ -6,26 +6,33 @@ Como participante quiero un chat público con el resto del grupo durante
 la fecha activa para chicanear, festejar y sufrir en vivo. No me
 interesa el historial: lo que se dijo en la fecha pasada se borra.
 
-## Página
+## Ubicación
 
-- `/chat` — protegida, un solo hilo plano correspondiente a la **fecha
-  activa**.
+El chat **no tiene página propia**: vive embebido en `/` (home), como
+sección arriba de `<MainTabs />`. No se suma tab "Chat" al header.
+
+Razones: en un grupo de 10 con poco volumen de mensajes, tenerlo
+siempre visible al pie del header invita a leer y postear sin un
+click extra. Al estar acotado en altura, no compite con los partidos
+de la fecha.
 
 ## Layout (mobile-first)
 
-- Header: `round_name` de la fecha activa.
+- Encabezado mínimo "Chat" en uppercase (tipografía del theme).
+- Contenedor con altura fija (`h-[35vh]` + `min-h-[180px]`) y
+  `overflow-y-auto`. El scroll vive dentro del contenedor, no del
+  body.
 - Lista de mensajes (más antiguos arriba, más recientes abajo).
-  - cada mensaje: `nickname` + `created_at` (formato `HH:mm` si es de
-    hoy, `DD/MM HH:mm` si no) + texto.
-  - el mensaje propio se distingue visualmente (color de chip
-    diferente, alineado a la derecha).
-- Auto-scroll al último mensaje al entrar y después de cada submit
-  propio. No hay infinite scroll: con 10 personas y ventana de ~1
-  semana, el volumen es chico.
-- Input fijo al pie con un `textarea` de 1-3 líneas y botón "Enviar"
-  (o `Cmd/Ctrl+Enter`).
-- Sin estado vacío especial: si no hay mensajes, mostrar copy
-  "Todavía nadie dijo nada. Tirá la primera." y nada más.
+  - cada mensaje: `nickname` + `created_at` formato `DD/MM HH:mm` +
+    texto.
+  - el mensaje propio se distingue visualmente (alineado a la derecha,
+    nickname en color del default).
+- Auto-scroll al pie del contenedor al primer mount y cuando llega un
+  mensaje nuevo (vía `scrollTop = scrollHeight`, scope limitado al
+  contenedor del chat para no mover el resto de la página).
+- `textarea` de 2 líneas con botón "Enviar". Atajo `⌘/Ctrl + Enter`
+  envía.
+- Empty state: "Todavía nadie dijo nada. Tirá la primera."
 
 ## Reglas
 
@@ -42,6 +49,8 @@ interesa el historial: lo que se dijo en la fecha pasada se borra.
 
 ## Server Action: `postChatMessage`
 
+Vive en `app/actions.ts` junto con las demás server actions del home.
+
 ```ts
 const schema = z.object({
   text: z.string().trim().min(1).max(500),
@@ -50,21 +59,24 @@ const schema = z.object({
 
 Pasos:
 
-1. `getUser()`. Si no hay → throw.
+1. `requireUser()`. Si no hay → redirect a `/login`.
 2. Validar input con Zod (`min(1)` rechaza solo-whitespace por el
    `.trim()` previo).
 3. `INSERT` en `chat_messages` con `user_id`, `text`, `created_at = now()`.
-4. `revalidatePath('/chat')`.
+4. `revalidatePath('/')`.
 
 ## Auto-refresh
 
-Polling client-side cada **5 segundos** mientras la página está
+Polling client-side cada **5 segundos** mientras la pestaña está
 visible (`document.visibilityState === 'visible'`). Cuando vuelve a
-foreground, fuerza un refetch inmediato.
+foreground, fuerza un refetch inmediato vía `router.refresh()`.
 
-Decisión: no usamos realtime (Supabase Realtime / WS) en v1. Polling
-es trivial y suficiente para 10 personas tirando ~50 mensajes por
-fecha.
+Trade-off conocido: como el chat vive en home, `router.refresh()`
+re-corre todas las queries de la home (matches, predicciones). Con 10
+personas y poca data por fecha es trivial. Si se vuelve notable,
+migrar a un endpoint dedicado.
+
+Decisión: no usamos realtime (Supabase Realtime / WS) en v1.
 
 ## Cron de limpieza
 
@@ -95,8 +107,8 @@ El cron también persiste en `app_state.last_chat_cron` un objeto
 
 ## Visibilidad en header
 
-Link "Chat" en el header del home, al lado de Ranking e Historial.
-Sin badge (no hay estado de "no leído").
+Sin link "Chat" en `MainTabs` — el chat vive directamente en home.
+Las demás secciones (Ranking, Historial) siguen igual.
 
 ## Edge cases
 
