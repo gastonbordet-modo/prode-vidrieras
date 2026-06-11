@@ -5,8 +5,10 @@ import { MainTabs } from "@/components/main-tabs";
 import { db } from "@/db/client";
 import { matches, predictions } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
+import { loadTagsByUser } from "@/lib/load-tags";
 import { getFinishedRounds } from "@/lib/ranking";
 import { score } from "@/lib/scoring";
+import { TagChips } from "@/components/tag-chip";
 
 export default async function HistorialPage({
   searchParams,
@@ -15,6 +17,8 @@ export default async function HistorialPage({
 }) {
   const { user } = await requireUser();
   const { round: roundParam } = await searchParams;
+  const tagsByUser = await loadTagsByUser();
+  const myTags = tagsByUser.get(user.id) ?? [];
 
   const allMatches = await db.query.matches.findMany({
     orderBy: [asc(matches.kickoffAt)],
@@ -84,7 +88,10 @@ export default async function HistorialPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 px-4 py-6">
       <MainTabs />
-      <h1 className="text-default text-xl font-bold">Historial</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-default text-xl font-bold">Historial</h1>
+        <TagChips tags={myTags} />
+      </div>
 
       <section className="flex items-center justify-between gap-3">
         <div>

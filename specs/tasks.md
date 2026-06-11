@@ -10,7 +10,7 @@ Plan de ejecución del MVP + progreso real.
   `POSTGRES_URL`, `NEXT_PUBLIC_SUPABASE_*` auto-inyectadas)
 - **Cron**: `0 5 * * *` UTC en Vercel — `/api/cron/sync` (auth por
   `Authorization: Bearer ${CRON_SECRET}`)
-- **Tests**: 121 verdes (`pnpm test`)
+- **Tests**: 136 verdes (`pnpm test`)
 - **Mundial 2026**: 104 partidos cargados en `matches`; arrancó el **11/6**
 
 ### Pendientes operativos (no son código)
@@ -37,8 +37,8 @@ Orden sugerido: chat primero (habilita la chicana base), tags
 después (100% lectura sobre datos existentes), apuestas al final (es
 la más invasiva y se beneficia del chat).
 
-**Estado**: Fase 9 (chat) ✅, Fase 11 (apuestas) ✅. Queda **Fase 10
-(tags de folklore)**.
+**Estado**: Fase 9 (chat) ✅, Fase 10 (tags) ✅, Fase 11 (apuestas) ✅.
+Tanda social completa. 🎉
 
 ---
 
@@ -178,16 +178,33 @@ Ver `specs/features/007-chat.md`.
 - [ ] Botón "Limpiar chat ahora" en `/admin/sync`
 - [ ] Link "Chat" en header del home
 
-## Fase 10 — Tags de folklore (feature 008)
+## Fase 10 — Tags de folklore (feature 008) ✅
 
 Ver `specs/features/008-tags.md`.
 
-- [ ] `lib/tags.ts` puro con `computeTags()` + tests por tag
-- [ ] `lib/tag-styles.ts` con paleta de 5 colores del theme + mapeo
-- [ ] Componente `<TagChip>` con tooltip
-- [ ] Integración en `/ranking`, `/historial`, `/chat`, header del home
-- [ ] Tests: positivos + negativos por tag, regla de los 3 cupos,
-      racha de Brujita, ranking Cebollita
+- [x] `lib/tags.ts` puro con `computeAllTags()` (todos los usuarios de una
+      pasada, porque la mayoría de los tags son comparativos) + 15 tests
+- [x] `lib/tag-styles.ts` con paleta de 5 colores del theme (fucsia, blue,
+      green, yellow, orange) + mapeo estable tagId→variante
+- [x] Componente `<TagChip>`/`<TagChips>` (client) con tooltip hover + tap
+- [x] `lib/load-tags.ts` helper de servidor (on-demand, sin tabla ni cron)
+- [x] Integración: `/ranking` (general + por fecha), `/chat` (cada
+      mensaje), header del home (tu nickname) y `/historial` (tus chips)
+- [x] Tests: positivos + negativos por tag, regla de los 3 cupos, racha de
+      Brujita, Cebollita en 3 fechas, Comeback
+
+### Decisiones de implementación
+
+- **Gating**: tags de fecha/torneo requieren ≥1 fecha cerrada; los de
+  carácter requieren que el usuario tenga pronósticos.
+- **Comeback/Cebollita** usan standings acumulados por fecha **sin
+  ajustes** (semántica de ranking-por-fecha); **Messi/El Diez** usan el
+  ranking general **con ajustes** (lo que muestra `/ranking`).
+- **Guards de sentido**: Messi requiere puntos>0, El Diez exactos>0,
+  Mascherano racha>0, Comeback ≥2 fechas y ganancia>0 (no se otorgan tags
+  vacíos al arranque del torneo).
+- **Brujita** matchea el nombre `"England"` (los datos de football-data
+  vienen en inglés).
 
 ## Fase 11 — Apuestas (feature 009) ✅
 

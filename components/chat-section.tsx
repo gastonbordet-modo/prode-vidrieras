@@ -13,6 +13,8 @@ import {
   type PostChatMessageState,
 } from "@/app/actions";
 import type { ChatMessagesResponse } from "@/app/api/chat/messages/route";
+import type { Tag } from "@/lib/tags";
+import { TagChips } from "@/components/tag-chip";
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_LEN = 500;
@@ -49,9 +51,11 @@ function maxId(messages: ChatMessageRow[]): number {
 export function ChatSection({
   initialMessages,
   currentUserId,
+  tagsByUser,
 }: {
   initialMessages: ChatMessageRow[];
   currentUserId: string;
+  tagsByUser: Record<string, Tag[]>;
 }) {
   const [messages, setMessages] = useState<ChatMessageRow[]>(initialMessages);
   const [text, setText] = useState("");
@@ -189,6 +193,7 @@ export function ChatSection({
                   <span className={mine ? "text-default font-semibold" : ""}>
                     {m.nickname}
                   </span>
+                  <TagChips tags={tagsByUser[m.userId] ?? []} />
                   <span>·</span>
                   <span>{formatTimestamp(m.createdAt)}</span>
                 </div>

@@ -3,18 +3,20 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { computeGeneralRanking } from "@/lib/ranking";
+import { loadTagsByUser } from "@/lib/load-tags";
 import type { StatsMatch } from "@/lib/user-stats";
 import { RankingTable } from "./ranking-table";
 
 export default async function RankingGeneralPage() {
   const { user } = await requireUser();
 
-  const [allUsers, allPredictions, allMatches, allAdjustments] =
+  const [allUsers, allPredictions, allMatches, allAdjustments, tagsByUser] =
     await Promise.all([
       db.query.users.findMany({ orderBy: [asc(users.createdAt)] }),
       db.query.predictions.findMany(),
       db.query.matches.findMany(),
       db.query.scoreAdjustments.findMany(),
+      loadTagsByUser(),
     ]);
 
   const matchesById = new Map<number, StatsMatch>(
@@ -46,7 +48,7 @@ export default async function RankingGeneralPage() {
       <RankingTable
         rows={rows}
         currentUserId={user.id}
-        showAdjustments
+        tagsByUser={tagsByUser}
         emptyMessage="Todavía no hay usuarios registrados."
       />
     </section>

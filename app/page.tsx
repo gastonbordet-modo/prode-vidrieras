@@ -4,14 +4,17 @@ import { db } from "@/db/client";
 import { chatMessages, matches, predictions, users } from "@/db/schema";
 import { getActiveRound } from "@/lib/active-round";
 import { requireUser } from "@/lib/auth";
+import { loadTagsByUser, tagsToRecord } from "@/lib/load-tags";
 import { ChatSection, type ChatMessageRow } from "@/components/chat-section";
 import { MainTabs } from "@/components/main-tabs";
 import { MatchCard } from "@/components/match-card";
+import { TagChips } from "@/components/tag-chip";
 import { signOut } from "./actions";
 
 export default async function HomePage() {
   const { user } = await requireUser();
   const activeRound = await getActiveRound();
+  const tagsByUser = await loadTagsByUser();
 
   const roundMatches =
     activeRound === null
@@ -65,11 +68,12 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex items-center justify-between">
-        <span className="text-text-gray text-sm">
+        <span className="text-text-gray flex flex-wrap items-center gap-1.5 text-sm">
           Hola,{" "}
           <strong className="text-text-dark font-semibold">
             {user.nickname}
           </strong>
+          <TagChips tags={tagsByUser.get(user.id) ?? []} />
         </span>
         <div className="flex items-center gap-4">
           {user.role === "admin" && (
@@ -94,6 +98,7 @@ export default async function HomePage() {
       <ChatSection
         initialMessages={initialChatMessages}
         currentUserId={user.id}
+        tagsByUser={tagsToRecord(tagsByUser)}
       />
 
       <MainTabs />

@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { computeRoundRanking, getFinishedRounds } from "@/lib/ranking";
+import { loadTagsByUser } from "@/lib/load-tags";
 import type { StatsMatch } from "@/lib/user-stats";
 import { RankingTable } from "../ranking-table";
 import { RoundSelect } from "./round-select";
@@ -15,10 +16,11 @@ export default async function RankingFechaPage({
   const { user } = await requireUser();
   const { round: roundParam } = await searchParams;
 
-  const [allUsers, allPredictions, allMatches] = await Promise.all([
+  const [allUsers, allPredictions, allMatches, tagsByUser] = await Promise.all([
     db.query.users.findMany({ orderBy: [asc(users.createdAt)] }),
     db.query.predictions.findMany(),
     db.query.matches.findMany(),
+    loadTagsByUser(),
   ]);
 
   const finishedRounds = getFinishedRounds(allMatches);
@@ -63,7 +65,7 @@ export default async function RankingFechaPage({
         </p>
         <RoundSelect rounds={finishedRounds} selected={selectedRound.number} />
       </div>
-      <RankingTable rows={rows} currentUserId={user.id} />
+      <RankingTable rows={rows} currentUserId={user.id} tagsByUser={tagsByUser} />
     </section>
   );
 }

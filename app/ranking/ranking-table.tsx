@@ -1,15 +1,17 @@
 import type { RankingRow } from "@/lib/ranking";
+import type { Tag } from "@/lib/tags";
+import { TagChips } from "@/components/tag-chip";
 
 export function RankingTable({
   rows,
   currentUserId,
-  showAdjustments,
   emptyMessage,
+  tagsByUser,
 }: {
   rows: RankingRow[];
   currentUserId: string;
-  showAdjustments?: boolean;
   emptyMessage?: string;
+  tagsByUser?: Map<string, Tag[]>;
 }) {
   if (rows.length === 0) {
     return (
@@ -28,9 +30,6 @@ export function RankingTable({
             <th className="px-3 py-2">Nickname</th>
             <th className="px-3 py-2 text-right">Pts</th>
             <th className="px-3 py-2 text-right">Exactos</th>
-            {showAdjustments && (
-              <th className="px-3 py-2 text-right">Ajustes</th>
-            )}
           </tr>
         </thead>
         <tbody className="text-text-light">
@@ -48,31 +47,22 @@ export function RankingTable({
                   {i + 1}
                 </td>
                 <td className="text-text-dark px-3 py-2 font-semibold">
-                  {r.nickname}
-                  {isMe && (
-                    <span className="text-text-gray ml-1 text-xs font-normal">
-                      (vos)
-                    </span>
-                  )}
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <span>{r.nickname}</span>
+                    {isMe && (
+                      <span className="text-text-gray text-xs font-normal">
+                        (vos)
+                      </span>
+                    )}
+                    {tagsByUser && (
+                      <TagChips tags={tagsByUser.get(r.userId) ?? []} />
+                    )}
+                  </span>
                 </td>
                 <td className="text-text-dark px-3 py-2 text-right font-semibold">
                   {r.points}
                 </td>
                 <td className="px-3 py-2 text-right">{r.exacts}</td>
-                {showAdjustments && (
-                  <td
-                    className={
-                      "px-3 py-2 text-right " +
-                      (r.adjustments > 0
-                        ? "text-system-success-dark"
-                        : r.adjustments < 0
-                          ? "text-system-error-dark"
-                          : "text-text-gray")
-                    }
-                  >
-                    {r.adjustments > 0 ? `+${r.adjustments}` : r.adjustments}
-                  </td>
-                )}
               </tr>
             );
           })}
