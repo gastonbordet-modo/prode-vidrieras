@@ -22,11 +22,7 @@ export default async function DevRankingGeneralPage({
       <p className="text-text-gray text-sm">
         Ranking general (incluye ajustes). Desempate: puntos → exactos → antigüedad.
       </p>
-      <RankingTable
-        rows={rows}
-        currentUserId={data.currentUserId}
-        showAdjustments
-      />
+      <RankingTable rows={rows} currentUserId={data.currentUserId} />
     </section>
   );
 }
